@@ -66,7 +66,7 @@
                [[x y] occupant]))))
 
 (defn
-  #^{:doc  "A nice string version of the board"
+  #^{:doc  "A nice string version of the board."
      :test (fn []
              (let [board (string-to-board ".W."
                                           "BW "

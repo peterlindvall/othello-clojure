@@ -2,7 +2,7 @@
   (:use [clojure.test :only (is are run-tests)]))
 
 (defn
-  #^{:doc  "Creates a square board of the given even size for two players. "
+  #^{:doc  "Creates a square board of the given even size for two players."
      :test (fn []
              (is (= (square-board 4 ["W" "B"])
                     {[0 0] "." [1 0] "." [2 0] "." [3 0] "."

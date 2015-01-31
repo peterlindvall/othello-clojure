@@ -32,7 +32,7 @@
                      :else [[x y] free])))))))
 
 (defn-
-  #^{:doc "Acquire the occupant players id at the given coordinate"
+  #^{:doc "Acquire the occupant player id at the given coordinate."
      :test (fn []
              (let [board {[0 0] "." [1 0] "W" [2 0] "."
                           [0 1] "B" [1 1] "W" [2 1] "W"}]

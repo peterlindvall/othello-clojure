@@ -15,10 +15,10 @@
   (do
     (when (odd? board-size) (throw (IllegalArgumentException. "board-size must be even")))
     (when (not= (count players) 2) (throw (IllegalArgumentException. "there must be two players")))
-    (into {} (for [y (range board-size)
-                   x (range board-size)]
-               (let [middle+ (/ board-size 2)
-                     middle- (- middle+ 1)]
+    (let [middle+ (/ board-size 2)
+          middle- (- middle+ 1)]
+      (into {} (for [y (range board-size)
+                     x (range board-size)]
                  (cond
                    (or
                      (and (= x middle-) (= y middle-))

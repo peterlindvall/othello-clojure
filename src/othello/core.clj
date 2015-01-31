@@ -71,7 +71,7 @@
              (let [board (string-to-board ".W."
                                           "BW "
                                           "W  ")]
-               (is (board-to-string board) ".W.\nBW\nW")))}
+               (is (= (board-to-string board) ".W.\nBW \nW  \n"))))}
   board-to-string [board]
   (let [max-x (max-coordinate board 0)
         max-y (max-coordinate board 1)]

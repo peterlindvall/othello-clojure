@@ -59,13 +59,15 @@
                      [0 2] "B" [1 2] "B" [2 2] "B" [3 2] "."})))}
   string-to-board [& string-board]
   ; ([0 ([0 \W] [1 \.] [2 \.] [3 \B])] [1 ([0 \W] [1 \W] [2 \.] [3 \.])] [2 ([0 \B] [1 \B] [2 \B] [3 \.])])
-  (into {} (for [row (map-indexed vector (map #(map-indexed vector (seq %)) string-board))
-                 :let [y (first row)]
-                 x-and-occupant (second row)
-                 :let [x (first x-and-occupant)
-                       occupant (str (second x-and-occupant))]]
-             (when (not= " " occupant)
-               [[x y] occupant]))))
+  (let
+    [indexed-elements (fn [seq] (map-indexed vector seq))]
+    (into {} (for [row (indexed-elements (map indexed-elements string-board))
+                   :let [y (first row)]
+                   x-and-occupant (second row)
+                   :let [x (first x-and-occupant)
+                         occupant (str (second x-and-occupant))]]
+               (when (not= " " occupant)
+                 [[x y] occupant])))))
 
 (defn
   #^{:doc  "A nice string version of the board"

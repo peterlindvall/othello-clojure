@@ -49,7 +49,9 @@
   (apply max (map #(nth % n) (keys board))))
 
 (defn-
-  #^{:doc  "Creates a board from the given string arguments."
+  #^{:doc
+     "Creates a board from the given string arguments. Input must form a rectangular board, but nodes can be left out
+     with space characters."
      :test (fn []
              (is (= (string-to-board "W..B" " W.." "BBB.")
                     {[0 0] "W" [1 0] "." [2 0] "." [3 0] "B"

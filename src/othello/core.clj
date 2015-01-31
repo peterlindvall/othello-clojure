@@ -75,15 +75,15 @@
   board-to-string [board]
   (let [max-x (max-coordinate board 0)
         max-y (max-coordinate board 1)]
-    (for
-      [x (range (inc max-x))
-       y (range (inc max-y))
-       :let [occupant (get-occupant board x y)]]
-      (cond
-        (and (nil? occupant) (= max-y y)) " \n"
-        (nil? occupant) " "
-        (= max-y y) (str occupant "\n")
-        :else occupant))))
+    (apply str (for
+                 [y (range (inc max-y))
+                  x (range (inc max-x))
+                  :let [occupant (get-occupant board x y)]]
+                 (cond
+                   (and (nil? occupant) (= max-x x)) " \n"
+                   (nil? occupant) " "
+                   (= max-x x) (str occupant "\n")
+                   :else occupant)))))
 
 (defn-
   #^{:doc  "Returns true if a player is occupying the node at the given coordinates"

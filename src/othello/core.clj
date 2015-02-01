@@ -111,8 +111,12 @@
              (let [board
                    (string-to-board ".W."
                                     "BW.")]
-               (is (update-board board "X" 0 0)
+               (is (mark board "X" 0 0)
                    (string-to-board "XW."
-                                    "BW."))))}
-  update-board [board player x y]
-  (update-in board [[x y]] (fn [arg] player)))
+                                    "BW."))
+               (is (thrown? IllegalArgumentException (mark board "X" 1 0)))))}
+  mark [board player x y]
+  (update-in board [[x y]] (fn [node]
+                             (if (not= node ".")
+                               (throw (IllegalArgumentException. ""))
+                               :player))))

@@ -93,14 +93,17 @@
                    :else occupant)))))
 
 (defn-
-  #^{:doc  "Returns true if a player is occupying the node at the given coordinates"
+  #^{:doc  "Returns true if a player is occupying the node at the given coordinates."
      :test (fn []
              (let [board (string-to-board ".WB")]
-               (is (false? (is-marked board 0 0))
-               (is (true? (is-marked board 1 0))))))}
-  is-marked [board x y]
-  (let [occupant? (get-occupant board x y)]
-    (not= "." occupant?)))
+               (is (false? (is-marked board 0 0)))
+               (is (true? (is-marked board 1 0)))
+               (is (true? (is-marked board "_" 0 0)))))}
+  is-marked
+  ([board x y] (is-marked board "." x y))
+  ([board free x y]
+    (let [occupant? (get-occupant board x y)]
+      (not= free occupant?))))
 
 (defn-
   #^{:doc  "If the the board is not marked at the position [x y] then the board is updated with the player marked at [x y]"

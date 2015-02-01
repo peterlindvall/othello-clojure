@@ -2,31 +2,34 @@
   (:use [clojure.test :only (is are run-tests)]))
 
 (defn
-  #^{:doc  "Creates a square board of the given even size for two players. "
+  #^{:doc  "Creates a square board of the given even size for two players."
      :test (fn []
              (is (= (square-board 4 ["W" "B"])
                     {[0 0] "." [1 0] "." [2 0] "." [3 0] "."
                      [0 1] "." [1 1] "W" [2 1] "B" [3 1] "."
                      [0 2] "." [1 2] "B" [2 2] "W" [3 2] "."
                      [0 3] "." [1 3] "." [2 3] "." [3 3] "."}))
+             (is (= (get (square-board 4 ["W" "B"] "x") [0 0]) "x"))
              (is (thrown? IllegalArgumentException (square-board 5)))
              (is (thrown? IllegalArgumentException (square-board 6 ["W" "B" "R"]))))}
-  square-board [board-size players]
-  (do
-    (when (odd? board-size) (throw (IllegalArgumentException. "board-size must be even")))
-    (when (not= (count players) 2) (throw (IllegalArgumentException. "there must be two players")))
-    (into {} (for [y (range board-size)
-                   x (range board-size)]
-               (let [middle+ (/ board-size 2)
-                     middle- (- middle+ 1)]
-                 (cond
-                   (or
-                     (and (= x middle-) (= y middle-))
-                     (and (= x middle+) (= y middle+))) [[x y] (first players)]
-                   (or
-                     (and (= x middle-) (= y middle+))
-                     (and (= x middle+) (= y middle-))) [[x y] (second players)]
-                   :else [[x y] "."]))))))
+  square-board
+  ([board-size players] (square-board board-size players "."))
+  ([board-size players free]
+    (do
+      (when (odd? board-size) (throw (IllegalArgumentException. "board-size must be even")))
+      (when (not= (count players) 2) (throw (IllegalArgumentException. "there must be two players")))
+      (let [middle+ (/ board-size 2)
+            middle- (- middle+ 1)]
+        (into {} (for [y (range board-size)
+                       x (range board-size)]
+                   (cond
+                     (or
+                       (and (= x middle-) (= y middle-))
+                       (and (= x middle+) (= y middle+))) [[x y] (first players)]
+                     (or
+                       (and (= x middle-) (= y middle+))
+                       (and (= x middle+) (= y middle-))) [[x y] (second players)]
+                     :else [[x y] free])))))))
 
 (defn-
   #^{:doc "Acquire the occupant player id at the given coordinate."

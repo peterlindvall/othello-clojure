@@ -31,8 +31,70 @@
                        (and (= x middle+) (= y middle-))) [[x y] (second players)]
                      :else [[x y] free])))))))
 
+(defn
+  #^{:doc  "Creates a board from the given string arguments. Nodes can be left out with space characters."
+     :test (fn []
+             (is (= (string-to-board '("W" "B") '("0..1" " 0.." "111.1"))
+                    {[0 0] "W" [1 0] "." [2 0] "." [3 0] "B"
+                     [1 1] "W" [2 1] "." [3 1] "."
+                     [0 2] "B" [1 2] "B" [2 2] "B" [3 2] "." [4 2] "B"})))}
+  string-to-board
+  ([players string-board]
+    (let [map-strategy (fn [value] (nth players (read-string value)))]
+      (string-to-board players string-board map-strategy)))
+  ([players string-board map-strategy]
+    (let
+      [indexed-elements (fn [seq] (map-indexed vector seq))]
+      ; ([0 ([0 \W] [1 \.] [2 \.] [3 \B])] [1 ([0 \W] [1 \W] [2 \.] [3 \.])] [2 ([0 \B] [1 \B] [2 \B] [3 \.])])
+      (into {} (for [row (indexed-elements (map indexed-elements string-board))
+                     :let [y (first row)]
+                     x-and-occupant (second row)
+                     :let [x (first x-and-occupant)
+                           occupant (str (second x-and-occupant))]]
+                 (condp = occupant
+                   " " ()
+                   "." [[x y] occupant]
+                   [[x y] (map-strategy occupant)]))))))
+
+(defn
+  #^{:doc  "A board is created from the string. The player ids must be of length one and excluding the dot character."
+     :test (fn []
+             (is (simple-string-to-board ".BW"
+                                         " BBW"
+                                         "W. B")
+                 {[0 0] "." [1 0] "B" [2 0] "W"
+                  [1 1] "B" [2 1] "B" [3 1] "W"
+                  [0 2] "W" [1 2] "." [3 2] "B"}))}
+  simple-string-to-board [& string-board]
+  (string-to-board '() string-board identity))
+
+(defn
+  #^{:doc  "Creates a diamond board for three players."
+     :test (fn []
+             (is (= (board-to-string (diamond-board "W" "B" "R")) (clojure.string/join '("    .    \n"
+                                                                                          "   ...   \n"
+                                                                                          "  .....  \n"
+                                                                                          " ..WBR.. \n"
+                                                                                          "...RWB...\n"
+                                                                                          " ..BRW.. \n"
+                                                                                          "  .....  \n"
+                                                                                          "   ...   \n"
+                                                                                          "    .    \n")))))}
+  diamond-board [& players]
+  (do
+    (when (not= (count players)) (throw IllegalArgumentException "There must be three players"))
+    (string-to-board players '("    ."
+                               "   ..."
+                               "  ....."
+                               " ..012.."
+                               "...201..."
+                               " ..120.."
+                               "  ....."
+                               "   ..."
+                               "    ."))))
+
 (defn-
-  #^{:doc "Acquire the occupant player id at the given coordinate."
+  #^{:doc  "Acquire the occupant player id at the given coordinate."
      :test (fn []
              (let [board {[0 0] "." [1 0] "W" [2 0] "."
                           [0 1] "B" [1 1] "W" [2 1] "W"}]
@@ -51,33 +113,12 @@
   max-coordinate [board n]
   (apply max (map #(nth % n) (keys board))))
 
-(defn-
-  #^{:doc
-     "Creates a board from the given string arguments. Input must form a rectangular board, but nodes can be left out
-     with space characters."
-     :test (fn []
-             (is (= (string-to-board "W..B" " W.." "BBB.")
-                    {[0 0] "W" [1 0] "." [2 0] "." [3 0] "B"
-                     [1 1] "W" [2 1] "." [3 1] "."
-                     [0 2] "B" [1 2] "B" [2 2] "B" [3 2] "."})))}
-  string-to-board [& string-board]
-  ; ([0 ([0 \W] [1 \.] [2 \.] [3 \B])] [1 ([0 \W] [1 \W] [2 \.] [3 \.])] [2 ([0 \B] [1 \B] [2 \B] [3 \.])])
-  (let
-    [indexed-elements (fn [seq] (map-indexed vector seq))]
-    (into {} (for [row (indexed-elements (map indexed-elements string-board))
-                   :let [y (first row)]
-                   x-and-occupant (second row)
-                   :let [x (first x-and-occupant)
-                         occupant (str (second x-and-occupant))]]
-               (when (not= " " occupant)
-                 [[x y] occupant])))))
-
 (defn
   #^{:doc  "A nice string version of the board."
      :test (fn []
-             (let [board (string-to-board ".W."
-                                          "BW "
-                                          "W  ")]
+             (let [board (simple-string-to-board ".W."
+                                                 "BW"
+                                                 "W")]
                (is (= (board-to-string board) ".W.\nBW \nW  \n"))))}
   board-to-string [board]
   (let [max-x (max-coordinate board 0)
@@ -95,7 +136,7 @@
 (defn-
   #^{:doc  "Returns true if a player is occupying the node at the given coordinates."
      :test (fn []
-             (let [board (string-to-board ".WB")]
+             (let [board (simple-string-to-board ".WB")]
                (is (false? (is-marked board 0 0)))
                (is (true? (is-marked board 1 0)))
                (is (true? (is-marked board "_" 0 0)))))}
@@ -109,11 +150,11 @@
   #^{:doc  "If the the board is not marked at the position [x y] then the board is updated with the player marked at [x y]"
      :test (fn []
              (let [board
-                   (string-to-board ".W."
-                                    "BW.")]
+                   (simple-string-to-board ".W."
+                                           "BW.")]
                (is (mark board "X" 0 0)
-                   (string-to-board "XW."
-                                    "BW."))
+                   (simple-string-to-board "XW."
+                                           "BW."))
                (is (thrown? IllegalArgumentException (mark board "X" 1 0)))))}
   mark [board player x y]
   (update-in board [[x y]] (fn [node]

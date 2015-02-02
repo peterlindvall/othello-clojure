@@ -164,10 +164,9 @@
                                               "BW.")))
                (is (thrown? IllegalArgumentException (mark board "X" 3 0)))))}
   mark [board player x y]
-  (update-in board [[x y]] (fn [node]
-                             (if (not (contains-coordinate board x y))
-                               (throw (IllegalArgumentException. "The board does not contain the given coordinate."))
-                               player))))
+  (do
+    (when (not (contains-coordinate board x y)) (throw (IllegalArgumentException. "The board does not contain the given coordinate.")))
+    (assoc-in board [[x y]] player)))
 
 (defn-
   #^{:doc  "Updates the board in the given direction if player moves at coordinate [x y]."

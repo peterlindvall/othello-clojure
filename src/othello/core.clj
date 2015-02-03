@@ -170,7 +170,7 @@
                                player))))
 
 (defn-
-  #^{:doc  "Updates the board in the given direction if player moves at coordinate [x y]."
+  #^{:doc  "Returns a new board taken the move by the player in the given direction into account. The coordinate [x y] where the move is made will not be occupied."
      :test (fn []
              (let [board (simple-string-to-board "..WWB"
                                                  "..BB."
@@ -204,7 +204,7 @@
       (throw (IllegalArgumentException. "The board does not contain the given coordinate.")))))
 
 (defn
-  #^{:doc  "Updates the board with the given move."
+  #^{:doc  "Returns a new board with the given move into account."
      :test (fn []
              (let [board (simple-string-to-board ".BW."
                                                  "BB.."
@@ -244,3 +244,25 @@
         (keys board))
     true
     false))
+
+(defn
+  #^{:doc  "Returns the next player in turn."
+     :test (fn []
+             (let [board (simple-string-to-board ".WB"
+                                                 "WWW"
+                                                 "OOO")
+                   players '("W" "B" "O")]
+               (is (= (next-player-in-turn board players "W") "B"))
+               (is (= (next-player-in-turn board players "B") "O"))
+               (is (= (next-player-in-turn board players "O") "B"))))}
+  next-player-in-turn [board players current]
+  (let [current-index (.indexOf players current)
+        get-next-index (fn [index]
+                         (if (= (inc index) (count players))
+                           0
+                           (inc index)))]
+    (loop [next-index (get-next-index current-index)]
+      (let [next-player (nth players next-index)]
+        (cond
+          (has-valid-move board next-player) next-player
+          :else (recur (get-next-index next-index)))))))

@@ -9,7 +9,7 @@
                      [0 1] nil [1 1] "W" [2 1] "B" [3 1] nil
                      [0 2] nil [1 2] "B" [2 2] "W" [3 2] nil
                      [0 3] nil [1 3] nil [2 3] nil [3 3] nil}))
-             (is (thrown? IllegalArgumentException (square-board 5)))
+             (is (thrown? IllegalArgumentException (square-board 5 ["W" "B"])))
              (is (thrown? IllegalArgumentException (square-board 6 ["W" "B" "R"]))))}
   square-board [board-size players]
     (do

@@ -85,10 +85,12 @@
                                                                         " ..BRW.. "
                                                                         "  .....  "
                                                                         "   ...   "
-                                                                        "    .    "))))}
+                                                                        "    .    ")))
+             (is (thrown? IllegalArgumentException (diamond-board "R" "G")))
+             (is (thrown? IllegalArgumentException (diamond-board "R" "G" "B" "A"))))}
   diamond-board [& players]
   (do
-    (when (not= (count players)) (throw IllegalArgumentException "There must be three players"))
+    (when (not= (count players) 3) (throw (IllegalArgumentException. "There must be three players")))
     (string-to-board players '("    ."
                                "   ..."
                                "  ....."

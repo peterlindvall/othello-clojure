@@ -138,8 +138,9 @@
      :test (fn []
              (let [board (simple-string-to-board ".W."
                                                  " BWB"
+                                                 "..B."
                                                  "W")]
-               (is (= (board-to-string board) ".W. \n BWB\nW   \n"))))}
+               (is (= (board-to-string board) ".W. \n BWB\n..B.\nW   \n"))))}
   board-to-string [board]
   (let [max-x (max-coordinate board 0)
         max-y (max-coordinate board 1)]
@@ -151,6 +152,7 @@
                  (cond
                    (and (not contains-coordinate?) max-x?) " \n"
                    (not contains-coordinate?) " "
+                   (and max-x? (nil? (get-occupant board x y))) ".\n"
                    (nil? (get-occupant board x y)) "."
                    (= max-x x) (str (get-occupant board x y) "\n")
                    :else (get-occupant board x y))))))
@@ -250,7 +252,6 @@
           (try
             (when (move board player (first %) (second %)) true)
             (catch Exception e false)))
-            ;(not= board (move board player (first %) (second %))))
         (keys board))
     true
     false))
@@ -276,3 +277,31 @@
         (cond
           (has-valid-move board next-player) next-player
           :else (recur (get-next-index next-index)))))))
+
+;; The mutable part of the namespace
+
+(def board-ref (ref ()))
+(def player-in-turn-ref (ref ()))
+(def players-ref (atom ()))
+
+(defn create-game! [board players]
+  (do
+    (reset! players-ref players)
+    (dosync
+      (ref-set board-ref board)
+      (ref-set player-in-turn-ref (first players)))
+    nil))
+
+(defn move! [player x y]
+  (do
+    (when (not= player @player-in-turn-ref) (throw (IllegalArgumentException. "The player is not in turn.")))
+    (dosync
+      (alter board-ref #(move % player x y))
+      (alter player-in-turn-ref #(next-player-in-turn @board-ref @players-ref %))
+      nil)))
+
+; For REPL use
+; (create-game! (square-board 4 '("W" "B")) '("W" "B"))
+; (print (board-to-string @board-ref))
+; (move! "W" 0 2)
+; (move! "W" 2 0)

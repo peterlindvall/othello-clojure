@@ -119,10 +119,10 @@
                (is (= (get-occupant board 2 0) nil))
                (is (thrown? IllegalArgumentException (get-occupant board 3 3)))))}
   get-occupant [board x y]
-  (cond
-    (and (contains? board [x y]) (not= (get board [x y]) ".")) (get board [x y])
-    (contains? board [x y]) nil
-    :else (throw (IllegalArgumentException. "The board does not contain the given coordinate."))))
+  (do
+    (when (not (contains-coordinate board x y)) (throw (IllegalArgumentException. "The board does not contain the given coordinate.")))
+    (if (not= (get board [x y]) ".")
+      (get board [x y]))))
 
 (defn-
   #^{:doc  "Returns the max value of all coordinates n-th position"

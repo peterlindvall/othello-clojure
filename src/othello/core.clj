@@ -109,7 +109,7 @@
                (is (thrown? IllegalArgumentException (get-occupant board 3 3)))))}
   get-occupant [board x y]
   (do
-    (when (not (contains? board [x y])) (throw (IllegalArgumentException. "The board does not contain the given coordinate.")))
+    (when (not (contains-coordinate board x y)) (throw (IllegalArgumentException. "The board does not contain the given coordinate.")))
     (if (not= (get board [x y]) ".")
       (get board [x y]))))
 

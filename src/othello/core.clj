@@ -29,29 +29,38 @@
                      :else [[x y] nil]))))))
 
 (defn
-  #^{:doc  "Creates a board from the given string arguments. Nodes can be left out with space characters."
+  #^{:doc
+     "Creates a board from the given string arguments. Nodes can be left out with space characters.
+     The dot character cannot be used as player id. The number of players cannot be more than 10."
      :test (fn []
-             (is (= (string-to-board '("W" "B") '("0..1" " 0.." "111.1"))
+             (is (= (string-to-board '("W" "B") '("0..1"
+                                                  " 0.."
+                                                  "111.1"))
                     {[0 0] "W" [1 0] nil [2 0] nil [3 0] "B"
-                     [1 1] "W" [2 1] nil [3 1] nil
-                     [0 2] "B" [1 2] "B" [2 2] "B" [3 2] nil [4 2] "B"})))}
+                               [1 1] "W" [2 1] nil [3 1] nil
+                     [0 2] "B" [1 2] "B" [2 2] "B" [3 2] nil [4 2] "B"}))
+             (is (thrown? IllegalArgumentException (string-to-board (range 11) nil)))
+             (is (thrown? IllegalArgumentException (string-to-board '(".") nil))))}
   string-to-board
   ([players string-board]
     (let [map-strategy (fn [value] (nth players (read-string value)))]
       (string-to-board players string-board map-strategy)))
   ([players string-board map-strategy]
-    (let
-      [indexed-elements (fn [seq] (map-indexed vector seq))]
-      ; ([0 ([0 \W] [1 \.] [2 \.] [3 \B])] [1 ([0 \W] [1 \W] [2 \.] [3 \.])] [2 ([0 \B] [1 \B] [2 \B] [3 \.])])
-      (into {} (for [row (indexed-elements (map indexed-elements string-board))
-                     :let [y (first row)]
-                     x-and-occupant (second row)
-                     :let [x (first x-and-occupant)
-                           occupant (str (second x-and-occupant))]]
-                 (condp = occupant
-                   " " ()
-                   "." [[x y] nil]
-                   [[x y] (map-strategy occupant)]))))))
+    (do
+      (when (> (count players) 10) (throw (IllegalArgumentException. "number of players cannot be more than 10")))
+      (when (some #(= "." %) players) (throw (IllegalArgumentException. "the dot character cannot be used as player id")))
+      (let
+        [indexed-elements (fn [seq] (map-indexed vector seq))]
+        ; ([0 ([0 \W] [1 \.] [2 \.] [3 \B])] [1 ([0 \W] [1 \W] [2 \.] [3 \.])] [2 ([0 \B] [1 \B] [2 \B] [3 \.])])
+        (into {} (for [row (indexed-elements (map indexed-elements string-board))
+                       :let [y (first row)]
+                       x-and-occupant (second row)
+                       :let [x (first x-and-occupant)
+                             occupant (str (second x-and-occupant))]]
+                   (condp = occupant
+                     " " ()
+                     "." [[x y] nil]
+                     [[x y] (map-strategy occupant)])))))))
 
 (defn
   #^{:doc  "A board is created from the string. The player ids must be of length one and excluding the dot character."
@@ -76,10 +85,12 @@
                                                                         " ..BRW.. "
                                                                         "  .....  "
                                                                         "   ...   "
-                                                                        "    .    "))))}
+                                                                        "    .    ")))
+             (is (thrown? IllegalArgumentException (diamond-board "R" "G")))
+             (is (thrown? IllegalArgumentException (diamond-board "R" "G" "B" "A"))))}
   diamond-board [& players]
   (do
-    (when (not= (count players)) (throw IllegalArgumentException "There must be three players"))
+    (when (not= (count players) 3) (throw (IllegalArgumentException. "There must be three players")))
     (string-to-board players '("    ."
                                "   ..."
                                "  ....."
@@ -164,10 +175,9 @@
                                               "BW.")))
                (is (thrown? IllegalArgumentException (mark board "X" 3 0)))))}
   mark [board player x y]
-  (update-in board [[x y]] (fn [node]
-                             (if (not (contains-coordinate board x y))
-                               (throw (IllegalArgumentException. "The board does not contain the given coordinate."))
-                               player))))
+  (do
+    (when (not (contains-coordinate board x y)) (throw (IllegalArgumentException. "The board does not contain the given coordinate.")))
+    (assoc-in board [[x y]] player)))
 
 (defn-
   #^{:doc  "Returns a new board taken the move by the player in the given direction into account. The coordinate [x y] where the move is made will not be occupied."

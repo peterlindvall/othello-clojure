@@ -168,12 +168,15 @@
     (not (nil? occupant?))))
 
 (defn-
-  #^{:doc  "If the the board is not marked at the position [x y] then the board is updated with the player marked at [x y]"
+  #^{:doc  "A new board is returned where the given player now is ocuupying the coordinate [x y]."
      :test (fn []
              (let [board (simple-string-to-board ".W."
                                                  "BW.")]
                (is (= (mark board "X" 0 0)
                       (simple-string-to-board "XW."
+                                              "BW.")))
+               (is (= (mark board "X" 1 0)
+                      (simple-string-to-board ".X."
                                               "BW.")))
                (is (thrown? IllegalArgumentException (mark board "X" 3 0)))))}
   mark [board player x y]
@@ -278,7 +281,8 @@
           (has-valid-move board next-player) next-player
           :else (recur (get-next-index next-index)))))))
 
-;; The mutable part of the namespace
+; The mutable part of the namespace
+; TODO: Write some kind of test for these methods
 
 (def board-ref (ref ()))
 (def player-in-turn-ref (ref ()))

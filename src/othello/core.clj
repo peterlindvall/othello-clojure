@@ -289,18 +289,17 @@
 ; TODO: Write some kind of (integration) tests for these methods
 
 (defn add-to-history [history key identity old new]
-  (when (not= old '())
-    (dosync
-      (swap! history conj old))))
+  (dosync
+    (alter history conj new)))
 
 ; The board with a history added
 (def board (ref ()))
-(def board-history (atom ()))
+(def board-history (ref ()))
 (add-watch board :history (partial add-to-history board-history))
 
 ; The player in turn with a history added
 (def player-in-turn (ref ()))
-(def player-in-turn-history (atom ()))
+(def player-in-turn-history (ref ()))
 (add-watch player-in-turn :history (partial add-to-history player-in-turn-history))
 
 (def players (atom ()))
@@ -316,13 +315,23 @@
 
 (defn move! [player x y]
   (do
-    (when (not= player @player-in-turn) (throw (IllegalArgumentException. "The player is not in turn.")))
+    (when (not= player @player-in-turn)
+      (throw (IllegalArgumentException. "The player is not in turn.")))
     (dosync
       (alter board #(move % player x y))
       (alter player-in-turn #(next-player-in-turn @board @players %))
       nil)))
 
-
+(defn undo!
+  ([] (undo! 1))
+  ([number-of-moves]
+    (do
+      (when (< (count @board-history) (dec number-of-moves))
+        (throw (IllegalArgumentException. "You can not undo, the history contains to few moves.")))
+      (dosync
+        (ref-set board (nth @board-history number-of-moves))
+        (alter board-history (partial drop (inc number-of-moves)))
+        nil))))
 
 
 
@@ -330,10 +339,13 @@
 ; For REPL use
 ;(create-game! (square-board 4 '("W" "B")) '("W" "B"))
 ;(print (board->string @board))
+;(print (history->string @board-history board->string))
 ;(move! "W" 0 2)
 ;(move! "B" 2 3)
-;(print (history->string @board-history board->string))
 ;(move! "W" 3 2)
+;(print (history->string @board-history board->string))
+;(print (board->string @board))
+;(undo! 2)
 ;(move! "B" 0 1)
 ;(move! "W" 0 0)
 ;(move! "B" 1 0)

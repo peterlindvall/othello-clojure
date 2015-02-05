@@ -1,5 +1,6 @@
 (ns othello.core
-  (:use [clojure.test :only (deftest is are run-tests)]))
+  (:use [clojure.test :only (deftest is are run-tests)]
+        [clojure.repl :only (doc)]))
 
 (defn
   #^{:doc  "Creates a square board of the given even size for two players."
@@ -160,10 +161,10 @@
   #^{:doc  "Returns true if a player is occupying the node at the given coordinates."
      :test (fn []
              (let [board (simple-string->board ".WB")]
-               (is (false? (is-marked board 0 0)))
-               (is (true? (is-marked board 1 0)))
-               (is (thrown? IllegalArgumentException (is-marked board 1 1)))))}
-  is-marked [board x y]
+               (is (false? (marked? board 0 0)))
+               (is (true? (marked? board 1 0)))
+               (is (thrown? IllegalArgumentException (marked? board 1 1)))))}
+  marked? [board x y]
   (let [occupant? (get-occupant board x y)]
     (not (nil? occupant?))))
 
@@ -251,7 +252,7 @@
   has-valid-move [board player]
   (not (nil? (some
                #(and
-                 (not (is-marked board (first %) (second %)))
+                 (not (marked? board (first %) (second %)))
                  (try
                    (when (move board player (first %) (second %)) true)
                    (catch Exception e false)))
@@ -279,14 +280,25 @@
           (has-valid-move board next-player) next-player
           :else (recur (get-next-index next-index)))))))
 
-(defn history->string [history item->string]
+(defn
+  #^{:doc  "Merges a history of items into a string."
+     :test (fn []
+             (let [history (list
+                             (simple-string->board ".BWBW."
+                                                   "..BBW.")
+                             (simple-string->board "WWWBW."
+                                                   "..BBW.")
+                             (simple-string->board "WWWBW."
+                                                   "..BBBB"))]
+               (is (= (history->string history board->string)
+                      ".BWBW.\n..BBW.\n\nWWWBW.\n..BBW.\n\nWWWBW.\n..BBBB\n"))))}
+  history->string [history item->string]
   (clojure.string/join "\n"
     (for [item history]
       (item->string item))))
 
-
 ; The mutable part of the namespace
-; TODO: Write some kind of (integration) tests for these methods
+; The model
 
 (defn add-to-history [history key identity old new]
   (dosync
@@ -304,6 +316,8 @@
 
 (def players (atom ()))
 
+; Mutating the model
+; TODO: Write some kind of (integration) tests for these methods
 ; TODO: How to get better names in the API but still use good names for the refs?
 (defn create-game! [a-board the-players]
   (do
@@ -326,11 +340,13 @@
   ([] (undo! 1))
   ([number-of-moves]
     (do
-      (when (< (count @board-history) (dec number-of-moves))
+      (when (< (dec (count @board-history)) number-of-moves)
         (throw (IllegalArgumentException. "You can not undo, the history contains to few moves.")))
       (dosync
         (ref-set board (nth @board-history number-of-moves))
         (alter board-history (partial drop (inc number-of-moves)))
+        (ref-set player-in-turn (nth @player-in-turn-history number-of-moves))
+        (alter player-in-turn-history (partial drop (inc number-of-moves)))
         nil))))
 
 
@@ -341,11 +357,13 @@
 ;(print (board->string @board))
 ;(print (history->string @board-history board->string))
 ;(move! "W" 0 2)
+;@player-in-turn
+;@player-in-turn-history
 ;(move! "B" 2 3)
 ;(move! "W" 3 2)
 ;(print (history->string @board-history board->string))
 ;(print (board->string @board))
-;(undo! 2)
+;(undo!)
 ;(move! "B" 0 1)
 ;(move! "W" 0 0)
 ;(move! "B" 1 0)

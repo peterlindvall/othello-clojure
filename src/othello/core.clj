@@ -341,7 +341,7 @@
   ([number-of-moves]
     (do
       (when (< (dec (count @board-history)) number-of-moves)
-        (throw (IllegalArgumentException. "You can not undo, the history contains to few moves.")))
+        (throw (IllegalArgumentException. "You can not undo, the history contains too few moves.")))
       (dosync
         (ref-set board (nth @board-history number-of-moves))
         (alter board-history (partial drop (inc number-of-moves)))

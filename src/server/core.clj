@@ -1,4 +1,5 @@
 (ns server.core
+  "Experimental namespace for testing out the Othello library. Will hopefully be a REST API later on that stores Othello game states..."
   (:require [othello.core :as othello]))
 
 ; The mutable part of the namespace

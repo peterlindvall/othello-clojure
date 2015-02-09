@@ -150,21 +150,19 @@
                                             ".....")))
                (is (thrown? IllegalArgumentException (move-in-direction board "W" 5 0 -1 0)))))}
   move-in-direction [board player x y dx dy]
-  (let [swap-pieces-in-direction (fn [board player x y dx dy]
-                                   (let [new-x (+ x dx)
-                                         new-y (+ y dy)
-                                         contains-coordinate? (contains-coordinate? board new-x new-y)]
-                                     (cond
-                                       (not contains-coordinate?) nil
-                                       (nil? (get-occupant board new-x new-y)) nil
-                                       (= player (get-occupant board new-x new-y)) board
-                                       :else (recur (mark board player new-x new-y) player new-x new-y dx dy))))
-        new-board (swap-pieces-in-direction board player x y dx dy)]
-    (if (contains-coordinate? board x y)
-      (cond
-        (= new-board nil) board
-        :else new-board)
-      (throw (IllegalArgumentException. "The board does not contain the given coordinate.")))))
+  (do
+    (when (not (contains-coordinate? board x y)) (throw (IllegalArgumentException. "The board does not contain the given coordinate.")))
+    (let [swap-pieces-in-direction (fn [board player x y dx dy]
+                                     (let [new-x (+ x dx)
+                                           new-y (+ y dy)
+                                           contains-coordinate? (contains-coordinate? board new-x new-y)]
+                                       (cond
+                                         (not contains-coordinate?) nil
+                                         (nil? (get-occupant board new-x new-y)) nil
+                                         (= player (get-occupant board new-x new-y)) board
+                                         :else (recur (mark board player new-x new-y) player new-x new-y dx dy))))
+          new-board (swap-pieces-in-direction board player x y dx dy)]
+      (or new-board board))))
 
 (defn
   #^{:doc  "Returns a new board with the given move into account."

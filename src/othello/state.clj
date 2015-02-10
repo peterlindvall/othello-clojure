@@ -15,9 +15,18 @@
               :id (uuid)}]
     (swap! games assoc (:id game) game)))
 
+(defn get-games []
+  @games)
+
+;
+; Old stuff below.
+;
+
+
 (defn add-to-history [history key identity old new]
   (dosync
     (alter history conj new)))
+
 
 ; The board with a history added
 (def board (ref ()))
@@ -34,13 +43,13 @@
 ; Mutating the model
 ; TODO: Write some kind of (integration) tests for these methods
 ; TODO: How to get better names in the API but still use good names for the refs?
-(defn create-game! [a-board the-players]
-  (do
-    (reset! players the-players)
-    (dosync
-      (ref-set board a-board)
-      (ref-set player-in-turn (first the-players)))
-    nil))
+(comment (defn create-game! [a-board the-players]
+           (do
+             (reset! players the-players)
+             (dosync
+               (ref-set board a-board)
+               (ref-set player-in-turn (first the-players)))
+             nil)))
 
 (defn move! [player x y]
   (do

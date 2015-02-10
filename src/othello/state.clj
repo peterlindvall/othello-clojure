@@ -6,22 +6,32 @@
 
 (def games (atom {}))
 
-(defn uuid [] (str (java.util.UUID/randomUUID)))
+; ==== Games collection manipulation ====
 
 (defn create-game! [board players]
   (let [game {:board (ref board)
               :players players
               :player-in-turn (ref (first players))
-              :id (uuid)}]
+              :id (uuid)}
+        uuid (fn [] (str (java.util.UUID/randomUUID)))]
     (swap! games assoc (:id game) game)))
 
-(defn- get-games []
-  @games)
+
+(defn- contains-game? [game-id]
+  (contains? @games game-id))
+
+(defn- remove-game! [game-id]
+  (do
+    (when (not (contains-game? game-id)) (throw (IllegalArgumentException. "Game with given id does not exist.")))
+    (swap! games dissoc game-id)))
+
+; ==== Game manipulation ====
+
+; TODO
 
 ;
 ; Old stuff below.
 ;
-
 
 (defn add-to-history [history key identity old new]
   (dosync

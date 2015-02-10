@@ -1,9 +1,19 @@
-(ns server.core
-  "Experimental namespace for testing out the Othello library. Will hopefully be a REST API later on that stores Othello game states..."
+(ns othello.state
+  "Namespace for holding all Othello games in memory state."
   (:require [othello.core :as othello]))
 
-; The mutable part of the namespace
 ; The model
+
+(def games (atom {}))
+
+(defn uuid [] (str (java.util.UUID/randomUUID)))
+
+(defn create-game! [board players]
+  (let [game {:board (ref board)
+              :players players
+              :player-in-turn (ref (first players))
+              :id (uuid)}]
+    (swap! games assoc (:id game) game)))
 
 (defn add-to-history [history key identity old new]
   (dosync

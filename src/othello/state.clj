@@ -15,7 +15,7 @@
               :id (uuid)}]
     (swap! games assoc (:id game) game)))
 
-(defn get-games []
+(defn- get-games []
   @games)
 
 ;

@@ -45,11 +45,10 @@
                   (if (instance? clojure.lang.PersistentArrayMap value1)
                     (recur value1 value2)
                     (= value1 value2))
-
                   ))) true (keys map1))))
 
 (defn
-  #^{:doc "Generates an UUID."}
+  #^{:doc "Generates a radnom UUID."}
   uuid
   []
   (str (java.util.UUID/randomUUID)))

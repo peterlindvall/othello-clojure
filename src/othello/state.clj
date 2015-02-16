@@ -1,6 +1,9 @@
 (ns othello.state
   "Namespace for holding all Othello games in memory state."
-  (:require [othello.core :as othello]))
+  (:require [othello.core :as othello])
+  (:use [clojure.test :only (deftest is are run-tests)]
+        [clojure.repl :only (doc)]
+        [othello.utils :only (uuid maps-equal?)]))
 
 ; The model
 
@@ -8,22 +11,70 @@
 
 ; ==== Games collection manipulation ====
 
-(defn create-game! [board players]
-  (let [game {:board (ref board)
-              :players players
+(defn-
+  #^{:doc
+           "Creates a game by given board, players and id and adds it to the games container.
+           The first player in the players list will be the first one to play."
+     :test (fn []
+             (let [game1 {:board          {[0 0] "W" [1 0] "B"}
+                          :players        ["W" "B"]
+                          :player-in-turn "W"
+                          :id             "game1"}
+                   game2 {:board          {[2 2] "B" [3 3] "W"}
+                          :players        ["B" "W"]
+                          :player-in-turn "W"
+                          :id             "game2"}]
+               (is (maps-equal? (create-game {} (game1 :board) (game1 :players) (game1 :id)) {"game1" game1}))
+               (is (maps-equal? (create-game {:game1 game1} (game2 :board) (game2 :players) (game2 :id)) {"game1" game1 "game2" game2}))
+               (is (thrown? IllegalArgumentException (create-game {"game1" {}} nil nil "game1")))))}
+  create-game
+  [games board players id]
+  (let [game {:board          (ref board)
+              :players        players
               :player-in-turn (ref (first players))
-              :id (uuid)}
-        uuid (fn [] (str (java.util.UUID/randomUUID)))]
-    (swap! games assoc (:id game) game)))
+              :id             id}]
+    (do
+      (when (contains-game? games (game :id)) (throw (IllegalArgumentException. "Game with given id already exist.")))
+      (assoc games (:id game) game))))
 
+(defn-
+  #^{:doc "Checks if a given game id exist in the games collection."
+     :test (fn []
+             (is (contains-game? {"game1" {}} "game1"))
+             (is (not (contains-game? {"game1" {}} "gam2"))))}
+  contains-game?
+  [games id]
+  (contains? games id))
 
-(defn- contains-game? [game-id]
-  (contains? @games game-id))
-
-(defn- remove-game! [game-id]
+(defn-
+  #^{:doc "Removes the gave with given id from the games collection."
+     :test (fn []
+             (is (= (remove-game {"game1" {}} "game1") {}))
+             (is (= (remove-game {"game1" {} "game2" {:test "test"}} "game1") {"game2" {:test "test"}}))
+             (is (thrown? IllegalArgumentException (remove-game {} "game1"))))}
+  remove-game
+  [games id]
   (do
-    (when (not (contains-game? game-id)) (throw (IllegalArgumentException. "Game with given id does not exist.")))
-    (swap! games dissoc game-id)))
+    (when (not (contains-game? games id)) (throw (IllegalArgumentException. "Game with given id does not exist.")))
+    (dissoc games id)))
+
+(defn
+  #^{:doc "Creates a game by given board, players and id and adds.
+           The first player in the players list will be the first one to play."}
+  create-game!
+  [board players]
+  (swap! games create-game board players (uuid)))
+
+
+(defn
+  #^{:doc "Removes the gave with given id."}
+  remove-game! [id]
+  (swap! remove-game id))
+
+(defn-
+  #^{:doc "Gets the ids of all games."}
+  list-games []
+  (keys @games))
 
 ; ==== Game manipulation ====
 

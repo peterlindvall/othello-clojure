@@ -16,10 +16,7 @@
              (is= (soft-deref nil) nil))}
   soft-deref
   [value]
-  (if (or
-        (instance? clojure.lang.Ref value)
-        (instance? clojure.lang.Atom value)
-        (instance? clojure.lang.Agent value))
+  (if (instance? clojure.lang.IDeref value)
     @value
     value))
 

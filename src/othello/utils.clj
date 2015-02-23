@@ -48,7 +48,7 @@
                   ))) true (keys map1))))
 
 (defn
-  #^{:doc "Generates a radnom UUID."}
+  #^{:doc "Generates a random UUID."}
   uuid
   []
   (str (java.util.UUID/randomUUID)))

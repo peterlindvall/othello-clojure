@@ -12,6 +12,15 @@
 ; ==== Games collection manipulation ====
 
 (defn-
+  #^{:doc "Checks if a given game id exist in the games collection."
+     :test (fn []
+             (is (contains-game? {"game1" {}} "game1"))
+             (is (not (contains-game? {"game1" {}} "gam2"))))}
+  contains-game?
+  [games id]
+  (contains? games id))
+
+(defn-
   #^{:doc
            "Creates a game by given board, players and id and adds it to the games container.
            The first player in the players list will be the first one to play."
@@ -36,15 +45,6 @@
     (do
       (when (contains-game? games (game :id)) (throw (IllegalArgumentException. "Game with given id already exist.")))
       (assoc games (:id game) game))))
-
-(defn-
-  #^{:doc "Checks if a given game id exist in the games collection."
-     :test (fn []
-             (is (contains-game? {"game1" {}} "game1"))
-             (is (not (contains-game? {"game1" {}} "gam2"))))}
-  contains-game?
-  [games id]
-  (contains? games id))
 
 (defn-
   #^{:doc "Removes the gave with given id from the games collection."

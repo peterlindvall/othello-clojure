@@ -1,18 +1,19 @@
 (ns othello.core
   "A collection of pure functions for handling Othello games."
-  (:use [clojure.test :only (deftest is are run-tests)]
-        [clojure.repl :only (doc)]))
+  (:use [clojure.test :only (is run-tests)]
+        [clojure.repl :only (doc)]
+        [test.core :only (is=)]))
 
 (defn
   #^{:doc  "Creates a board from the given string arguments. Nodes can be left out with space characters.
             The dot character cannot be used as player id. The number of players cannot be more than 10."
      :test (fn []
-             (is (= (string->board '("W" "B") '("0..1"
-                                                 " 0.."
-                                                 "111.1"))
-                    {[0 0] "W" [1 0] nil [2 0] nil [3 0] "B"
-                               [1 1] "W" [2 1] nil [3 1] nil
-                     [0 2] "B" [1 2] "B" [2 2] "B" [3 2] nil [4 2] "B"}))
+             (is= (string->board '("W" "B") (list "0..1"
+                                                  " 0.."
+                                                  "111.1"))
+                  {[0 0] "W" [1 0] nil [2 0] nil [3 0] "B"
+                   [1 1] "W" [2 1] nil [3 1] nil
+                   [0 2] "B" [1 2] "B" [2 2] "B" [3 2] nil [4 2] "B"})
              (is (thrown? IllegalArgumentException (string->board (range 11) nil)))
              (is (thrown? IllegalArgumentException (string->board '(".") nil))))}
   string->board
@@ -39,12 +40,12 @@
 (defn
   #^{:doc  "A board is created from the string. The player ids must be of length one and excluding the dot character."
      :test (fn []
-             (is (simple-string->board ".BW"
-                                       " BBW"
-                                       "W. B")
-                 {[0 0] nil [1 0] "B" [2 0] "W"
-                  [1 1] "B" [2 1] "B" [3 1] "W"
-                  [0 2] "W" [1 2] nil [3 2] "B"}))}
+             (is= (simple-string->board ".BW"
+                                        " BBW"
+                                        "W. B")
+                  {[0 0] nil [1 0] "B" [2 0] "W"
+                   [1 1] "B" [2 1] "B" [3 1] "W"
+                   [0 2] "W" [1 2] nil [3 2] "B"}))}
   simple-string->board [& string-board]
   (string->board '() string-board identity))
 
@@ -52,8 +53,8 @@
   #^{:doc  "Determines if the given board contains the given coordinate."
      :test (fn []
              (let [board (simple-string->board ".W")]
-               (is (true? (contains-coordinate? board 0 0)))
-               (is (false? (contains-coordinate? board 1 1)))))}
+               (is (contains-coordinate? board 0 0))
+               (is (not (contains-coordinate? board 1 1)))))}
   contains-coordinate? [board x y]
   (contains? board [x y]))
 
@@ -62,8 +63,8 @@
      :test (fn []
              (let [board {[0 0] "." [1 0] "W" [2 0] "."
                           [0 1] "B" [1 1] "W" [2 1] "W"}]
-               (is (= (get-occupant board 0 1) "B"))
-               (is (= (get-occupant board 2 0) nil))
+               (is= (get-occupant board 0 1) "B")
+               (is= (get-occupant board 2 0) nil)
                (is (thrown? IllegalArgumentException (get-occupant board 3 3)))))}
   get-occupant [board x y]
   (do
@@ -75,8 +76,8 @@
   #^{:doc  "Returns the max value of all coordinates n-th position"
      :test (fn []
              (let [board {[0 0] "." [1 3] "." [7 2] "."}]
-               (is (max-coordinate board 0) 7)
-               (is (max-coordinate board 1) 3)))}
+               (is= (max-coordinate board 0) 7)
+               (is= (max-coordinate board 1) 3)))}
   max-coordinate [board n]
   (apply max (map #(nth % n) (keys board))))
 
@@ -87,7 +88,7 @@
                                                " BWB"
                                                "..B."
                                                "W")]
-               (is (= (board->string board) ".W. \n BWB\n..B.\nW   \n"))))}
+               (is= (board->string board) ".W. \n BWB\n..B.\nW   \n")))}
   board->string [board]
   (let [max-x (max-coordinate board 0)
         max-y (max-coordinate board 1)]
@@ -108,8 +109,8 @@
   #^{:doc  "Returns true if a player is occupying the node at the given coordinates."
      :test (fn []
              (let [board (simple-string->board ".WB")]
-               (is (false? (marked? board 0 0)))
-               (is (true? (marked? board 1 0)))
+               (is (not (marked? board 0 0)))
+               (is (marked? board 1 0))
                (is (thrown? IllegalArgumentException (marked? board 1 1)))))}
   marked? [board x y]
   (let [occupant? (get-occupant board x y)]
@@ -120,12 +121,12 @@
      :test (fn []
              (let [board (simple-string->board ".W."
                                                "BW.")]
-               (is (= (mark board "X" 0 0)
-                      (simple-string->board "XW."
-                                            "BW.")))
-               (is (= (mark board "X" 1 0)
-                      (simple-string->board ".X."
-                                            "BW.")))
+               (is= (mark board "X" 0 0)
+                    (simple-string->board "XW."
+                                          "BW."))
+               (is= (mark board "X" 1 0)
+                    (simple-string->board ".X."
+                                          "BW."))
                (is (thrown? IllegalArgumentException (mark board "X" 3 0)))))}
   mark [board player x y]
   (do
@@ -138,16 +139,16 @@
              (let [board (simple-string->board "..WWB"
                                                "..BB."
                                                ".....")]
-               (is (= (move-in-direction board "B" 1 0 1 0)
-                      (simple-string->board "..BBB"
-                                            "..BB."
-                                            ".....")))
-               (is (= board (move-in-direction board "B" 0 0 1 0)))
-               (is (= board (move-in-direction board "B" 0 0 -1 0)))
-               (is (= (move-in-direction board "W" 1 2 1 -1)
-                      (simple-string->board "..WWB"
-                                            "..WB."
-                                            ".....")))
+               (is= (move-in-direction board "B" 1 0 1 0)
+                    (simple-string->board "..BBB"
+                                          "..BB."
+                                          "....."))
+               (is= (move-in-direction board "B" 0 0 1 0) board)
+               (is= (move-in-direction board "B" 0 0 -1 0) board)
+               (is= (move-in-direction board "W" 1 2 1 -1)
+                    (simple-string->board "..WWB"
+                                          "..WB."
+                                          "....."))
                (is (thrown? IllegalArgumentException (move-in-direction board "W" 5 0 -1 0)))))}
   move-in-direction [board player x y dx dy]
   (do
@@ -171,14 +172,14 @@
                                                "BB.."
                                                "BBB."
                                                "WWWW")]
-               (is (= (move board "W" 0 0) (simple-string->board "WWW."
-                                                                 "WW.."
-                                                                 "WBW."
-                                                                 "WWWW")))
-               (is (= (move board "B" 3 0) (simple-string->board ".BBB"
-                                                                 "BB.."
-                                                                 "BBB."
-                                                                 "WWWW")))
+               (is= (move board "W" 0 0) (simple-string->board "WWW."
+                                                               "WW.."
+                                                               "WBW."
+                                                               "WWWW"))
+               (is= (move board "B" 3 0) (simple-string->board ".BBB"
+                                                               "BB.."
+                                                               "BBB."
+                                                               "WWWW"))
                (is (thrown? IllegalArgumentException (move board "B" 0 0)))
                (is (thrown? IllegalArgumentException (move board "B" 1 0)))))}
   move [board player x y]
@@ -192,8 +193,8 @@
   #^{:doc  "Determines if the given player has a valid move."
      :test (fn []
              (let [board (simple-string->board "..BW")]
-               (is (true? (has-valid-move board "W")))
-               (is (false? (has-valid-move board "B")))))}
+               (is (has-valid-move board "W"))
+               (is (not (has-valid-move board "B")))))}
   has-valid-move [board player]
   (not (nil? (some
                #(and
@@ -210,9 +211,9 @@
                                                "WWW"
                                                "OOO")
                    players '("W" "B" "O")]
-               (is (= (next-player-in-turn board players "W") "B"))
-               (is (= (next-player-in-turn board players "B") "O"))
-               (is (= (next-player-in-turn board players "O") "B"))))}
+               (is= (next-player-in-turn board players "W") "B")
+               (is= (next-player-in-turn board players "B") "O")
+               (is= (next-player-in-turn board players "O") "B")))}
   next-player-in-turn [board players current]
   (let [current-index (.indexOf players current)
         get-next-index #(mod (inc %1) (count players))]
@@ -232,9 +233,9 @@
                                                    "..BBW.")
                              (simple-string->board "WWWBW."
                                                    "..BBBB"))]
-               (is (= (history->string history board->string)
-                      ".BWBW.\n..BBW.\n\nWWWBW.\n..BBW.\n\nWWWBW.\n..BBBB\n"))))}
+               (is= (history->string history board->string)
+                    ".BWBW.\n..BBW.\n\nWWWBW.\n..BBW.\n\nWWWBW.\n..BBBB\n")))}
   history->string [history item->string]
   (clojure.string/join "\n"
-    (for [item history]
-      (item->string item))))
+                       (for [item history]
+                         (item->string item))))

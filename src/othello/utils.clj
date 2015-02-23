@@ -1,18 +1,19 @@
 (ns othello.utils
   "Assorted utility functions. Might be moved out from Othello package later."
   (:use [clojure.test :only (deftest is are run-tests)]
-        [clojure.repl :only (doc)]))
+        [clojure.repl :only (doc)]
+        [test.core :only (is=)]))
 
 (defn
   #^{:doc
            "Works like clojure.core/deref except that if the given value is not something dereferencable,
            the value will simply be returned."
      :test (fn []
-             (is (= (soft-deref "test") "test"))
-             (is (= (soft-deref (atom "test")) "test"))
-             (is (= (soft-deref (ref "test")) "test"))
-             (is (= (soft-deref (agent "test")) "test"))
-             (is (= (soft-deref nil) nil)))}
+             (is= (soft-deref "test") "test")
+             (is= (soft-deref (atom "test")) "test")
+             (is= (soft-deref (ref "test")) "test")
+             (is= (soft-deref (agent "test")) "test")
+             (is= (soft-deref nil) nil))}
   soft-deref
   [value]
   (if (or

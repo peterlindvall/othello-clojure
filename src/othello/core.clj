@@ -215,10 +215,7 @@
                (is (= (next-player-in-turn board players "O") "B"))))}
   next-player-in-turn [board players current]
   (let [current-index (.indexOf players current)
-        get-next-index (fn [index]
-                         (if (= (inc index) (count players))
-                           0
-                           (inc index)))]
+        get-next-index #(mod (inc %1) (count players))]
     (loop [next-index (get-next-index current-index)]
       (let [next-player (nth players next-index)]
         (cond

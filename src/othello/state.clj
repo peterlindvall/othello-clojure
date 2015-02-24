@@ -15,36 +15,31 @@
   #^{:doc "Checks if a given game id exist in the games collection."
      :test (fn []
              (is (contains-game? {"game1" {}} "game1"))
-             (is (not (contains-game? {"game1" {}} "gam2"))))}
-  contains-game?
-  [games id]
+             (is (not (contains-game? {"game1" {}} "game2"))))}
+  contains-game? [games id]
   (contains? games id))
 
 (defn-
-  #^{:doc
-           "Creates a game by given board, players and id and adds it to the games container.
-           The first player in the players list will be the first one to play."
+  #^{:doc  "Creates a game consisting of the given board, players and id.
+            The first player in the players list will be the first one to play."}
+  create-game [board players id]
+  {:board          (ref board)
+   :players        players
+   :player-in-turn (ref (first players))
+   :id             id})
+
+(defn-
+  #^{:doc  "Adds the given game to the games container."
      :test (fn []
-             (let [game1 {:board          {[0 0] "W" [1 0] "B"}
-                          :players        ["W" "B"]
-                          :player-in-turn "W"
-                          :id             "game1"}
-                   game2 {:board          {[2 2] "B" [3 3] "W"}
-                          :players        ["B" "W"]
-                          :player-in-turn "W"
-                          :id             "game2"}]
-               (is (maps-equal? (create-game {} (game1 :board) (game1 :players) (game1 :id)) {"game1" game1}))
-               (is (maps-equal? (create-game {:game1 game1} (game2 :board) (game2 :players) (game2 :id)) {"game1" game1 "game2" game2}))
-               (is (thrown? IllegalArgumentException (create-game {"game1" {}} nil nil "game1")))))}
-  create-game
-  [games board players id]
-  (let [game {:board          (ref board)
-              :players        players
-              :player-in-turn (ref (first players))
-              :id             id}]
-    (do
-      (when (contains-game? games (game :id)) (throw (IllegalArgumentException. "Game with given id already exist.")))
-      (assoc games (:id game) game))))
+             (let [game1 (create-game (othello/simple-string->board "WB") ["W" "B"] "game1")
+                   game2 (create-game (othello/simple-string->board ".BWB") ["B" "W"] "game2")]
+               (is (maps-equal? (add-new-game {} game1) {"game1" game1}))
+               (is (maps-equal? (add-new-game {:game1 game1} game2) {"game1" game1 "game2" game2}))
+               (is (thrown? IllegalArgumentException (add-new-game {"game1" {}} game1)))))}
+  add-new-game [games game]
+  (do
+    (when (contains-game? games (game :id)) (throw (IllegalArgumentException. "Game with given id already exist.")))
+    (assoc games (:id game) game)))
 
 (defn-
   #^{:doc "Removes the gave with given id from the games collection."
@@ -52,24 +47,24 @@
              (is (= (remove-game {"game1" {}} "game1") {}))
              (is (= (remove-game {"game1" {} "game2" {:test "test"}} "game1") {"game2" {:test "test"}}))
              (is (thrown? IllegalArgumentException (remove-game {} "game1"))))}
-  remove-game
-  [games id]
+  remove-game [games id]
   (do
     (when (not (contains-game? games id)) (throw (IllegalArgumentException. "Game with given id does not exist.")))
     (dissoc games id)))
 
 (defn
-  #^{:doc "Creates a game by given board, players and id and adds.
-           The first player in the players list will be the first one to play."}
-  create-game!
-  [board players]
-  (swap! games create-game board players (uuid)))
-
+  #^{:doc "Creates a game from the given board, players and id and adds it to the games container."}
+  new-game! [board players]
+  (let [game (create-game board players (uuid))]
+    (swap! games add-new-game game)))
 
 (defn
   #^{:doc "Removes the gave with given id."}
   remove-game! [id]
-  (swap! remove-game id))
+  (do
+    (if (contains-game? @games id)
+      (swap! remove-game id))
+    nil))
 
 (defn-
   #^{:doc "Gets the ids of all games."}

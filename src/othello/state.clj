@@ -3,7 +3,8 @@
   (:require [othello.core :as othello])
   (:use [clojure.test :only (deftest is are run-tests)]
         [clojure.repl :only (doc)]
-        [othello.utils :only (uuid maps-equal?)]))
+        [othello.utils :only (uuid soft-deref)]
+        [test.core :only (is=)]))
 
 ; The model
 
@@ -31,10 +32,10 @@
                           :id             "game1"}
                    game2 {:board          {[2 2] "B" [3 3] "W"}
                           :players        ["B" "W"]
-                          :player-in-turn "W"
+                          :player-in-turn "B"
                           :id             "game2"}]
-               (is (maps-equal? (create-game {} (game1 :board) (game1 :players) (game1 :id)) {"game1" game1}))
-               (is (maps-equal? (create-game {:game1 game1} (game2 :board) (game2 :players) (game2 :id)) {"game1" game1 "game2" game2}))
+               (is= (soft-deref (create-game {} (game1 :board) (game1 :players) (game1 :id))) {"game1" game1})
+               (is= (soft-deref (create-game {"game1" game1} (game2 :board) (game2 :players) (game2 :id))) {"game2" game2 "game1" game1})
                (is (thrown? IllegalArgumentException (create-game {"game1" {}} nil nil "game1")))))}
   create-game
   [games board players id]

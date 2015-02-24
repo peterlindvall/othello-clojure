@@ -1,5 +1,5 @@
-(ns othello.utils
-  "Assorted utility functions. Might be moved out from Othello package later."
+(ns utils.core
+  "Assorted utility functions."
   (:use [clojure.test :only (deftest is are run-tests)]
         [clojure.repl :only (doc)]
         [clojure.walk :only (postwalk)]

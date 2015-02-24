@@ -3,7 +3,7 @@
   (:require [othello.core :as othello])
   (:use [clojure.test :only (deftest is are run-tests)]
         [clojure.repl :only (doc)]
-        [othello.utils :only (uuid soft-deref)]
+        [utils.core :only (uuid soft-deref)]
         [test.core :only (is=)]))
 
 ; The model

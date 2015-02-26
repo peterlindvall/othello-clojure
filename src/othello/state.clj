@@ -11,6 +11,9 @@
 
 ; ==== Games collection manipulation ====
 
+(defn- add-to-history! [history key identity old new]
+  (swap! history conj new))
+
 (defn-
   #^{:doc "Checks if a given game id exist in the games collection."
      :test (fn []
@@ -23,10 +26,14 @@
   #^{:doc  "Creates a game consisting of the given board, players and id.
             The first player in the players list will be the first one to play."}
   create-game [board players id]
-  {:board          (ref board)
-   :players        players
-   :player-in-turn (ref (first players))
-   :id             id})
+  (let [state (atom {})
+        state-history (atom '())]
+    (do
+      (add-watch state :history (partial add-to-history! state-history))
+      (reset! state {:board board :player-in-turn (first players)})
+      {:state   state
+       :players players
+       :id      id})))
 
 (defn-
   #^{:doc  "Adds the given game to the games container."
@@ -79,20 +86,16 @@
 ; Old stuff below.
 ;
 
-(defn add-to-history [history key identity old new]
-  (dosync
-    (alter history conj new)))
-
 
 ; The board with a history added
 (def board (ref ()))
 (def board-history (ref ()))
-(add-watch board :history (partial add-to-history board-history))
+(add-watch board :history (partial add-to-history! board-history))
 
 ; The player in turn with a history added
 (def player-in-turn (ref ()))
 (def player-in-turn-history (ref ()))
-(add-watch player-in-turn :history (partial add-to-history player-in-turn-history))
+(add-watch player-in-turn :history (partial add-to-history! player-in-turn-history))
 
 (def players (atom ()))
 

@@ -6,6 +6,6 @@
   ([actual expected message]
     `(let [equal# (= ~actual ~expected)]
        (do
-         (comment (when-not equal#
-                    (println "Actual:" ~actual "\nExpected:" ~expected)))
+         (when-not equal#
+                    (println "Actual:" ~actual "\nExpected:" ~expected))
          (is (= ~actual ~expected) ~message)))))

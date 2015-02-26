@@ -172,17 +172,17 @@
                                                "BB.."
                                                "BBB."
                                                "WWWW")]
-               (is= (move board "W" 0 0) (simple-string->board "WWW."
-                                                               "WW.."
-                                                               "WBW."
-                                                               "WWWW"))
-               (is= (move board "B" 3 0) (simple-string->board ".BBB"
-                                                               "BB.."
-                                                               "BBB."
-                                                               "WWWW"))
-               (is (thrown? IllegalArgumentException (move board "B" 0 0)))
-               (is (thrown? IllegalArgumentException (move board "B" 1 0)))))}
-  move [board player x y]
+               (is= (move-on-board board "W" 0 0) (simple-string->board "WWW."
+                                                                        "WW.."
+                                                                        "WBW."
+                                                                        "WWWW"))
+               (is= (move-on-board board "B" 3 0) (simple-string->board ".BBB"
+                                                                        "BB.."
+                                                                        "BBB."
+                                                                        "WWWW"))
+               (is (thrown? IllegalArgumentException (move-on-board board "B" 0 0)))
+               (is (thrown? IllegalArgumentException (move-on-board board "B" 1 0)))))}
+  move-on-board [board player x y]
   (let [directions '([-1 -1] [-1 0] [-1 1] [0 -1] [0 1] [1 -1] [1 0] [1 1])
         new-board (reduce #(move-in-direction %1 player x y (first %2) (second %2)) board directions)]
     (if (not= board new-board)
@@ -190,7 +190,7 @@
       (throw (IllegalArgumentException. "Can not move at that coordinate")))))
 
 (defn
-  #^{:doc  "Determines if the given player has a valid move."
+  #^{:doc  "Determines if the given player has a valid move on the given board."
      :test (fn []
              (let [board (simple-string->board "..BW")]
                (is (has-valid-move board "W"))
@@ -200,12 +200,13 @@
                #(and
                  (not (marked? board (first %) (second %)))
                  (try
-                   (when (move board player (first %) (second %)) true)
+                   (when (move-on-board board player (first %) (second %)) true)
                    (catch Exception e false)))
                (keys board)))))
 
 (defn
-  #^{:doc  "Returns the next player in turn."
+  #^{:doc  "Returns the next player in turn. The current-player is the player that already made a move and the board is
+            the board after the move."
      :test (fn []
              (let [board (simple-string->board ".WB"
                                                "WWW"
@@ -213,15 +214,29 @@
                    players '("W" "B" "O")]
                (is= (next-player-in-turn board players "W") "B")
                (is= (next-player-in-turn board players "B") "O")
-               (is= (next-player-in-turn board players "O") "B")))}
-  next-player-in-turn [board players current]
-  (let [current-index (.indexOf players current)
+               (is= (next-player-in-turn board players "O") "B"))
+             (is= (next-player-in-turn (simple-string->board ".WWWWB.") '("W" "B") "W") "B"))}
+  next-player-in-turn [board players current-player]
+  (let [current-index (.indexOf players current-player)
         get-next-index #(mod (inc %1) (count players))]
     (loop [next-index (get-next-index current-index)]
       (let [next-player (nth players next-index)]
         (cond
           (has-valid-move board next-player) next-player
           :else (recur (get-next-index next-index)))))))
+
+(defn
+  #^{:doc  "Returns a new state with a new board and a new player-in-turn."
+     :test (fn []
+             (let [board (simple-string->board "..BBWB.")]
+               (is= (move {:board board :player-in-turn "W"} '("W" "B") "W" 1 0)
+                    {:board (simple-string->board ".WWWWB.") :player-in-turn "B"})))}
+  move [state players player x y]
+  (do
+    (when (not= (:player-in-turn state) player) (throw (IllegalArgumentException. "The player is not in turn.")))
+    (let [board-after-move (move-on-board (:board state) player x y)]
+      {:board          board-after-move
+       :player-in-turn (next-player-in-turn board-after-move players player)})))
 
 (defn
   #^{:doc  "Merges a history of items into a string."

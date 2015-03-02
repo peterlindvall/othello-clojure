@@ -190,6 +190,20 @@
       (throw (IllegalArgumentException. "Can not move at that coordinate")))))
 
 (defn
+  #^{:doc  "Determines if a move on the given board is valid."
+     :test (fn []
+             (let [board (simple-string->board "..WB")]
+               (is (valid-board-move? board "B" 1 0))
+               (is (not (valid-board-move? board "B" 0 0)))
+               (is (not (valid-board-move? board "B" 2 0)))))}
+  valid-board-move? [board player x y]
+  (and
+    (not (marked? board x y))
+    (try
+      (when (move-on-board board player x y) true)
+      (catch Exception e false))))
+
+(defn
   #^{:doc  "Determines if the given player has a valid move on the given board."
      :test (fn []
              (let [board (simple-string->board "..BW")]
@@ -197,11 +211,7 @@
                (is (not (has-valid-move board "B")))))}
   has-valid-move [board player]
   (not (nil? (some
-               #(and
-                 (not (marked? board (first %) (second %)))
-                 (try
-                   (when (move-on-board board player (first %) (second %)) true)
-                   (catch Exception e false)))
+               #(valid-board-move? board player (first %) (second %))
                (keys board)))))
 
 (defn

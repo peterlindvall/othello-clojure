@@ -23,6 +23,10 @@
   (contains? games id))
 
 (defn-
+  get-game [id]
+  (get @games id))
+
+(defn-
   #^{:doc  "Creates a game consisting of the given board, players and id.
             The first player in the players list will be the first one to play."}
   create-game [board players id]
@@ -31,9 +35,10 @@
     (do
       (add-watch state :history (partial add-to-history! state-history))
       (reset! state {:board board :player-in-turn (first players)})
-      {:state   state
-       :players players
-       :id      id})))
+      {:state         state
+       :state-history state-history
+       :players       players
+       :id            id})))
 
 (defn-
   #^{:doc  "Adds the given game to the games container."
@@ -69,18 +74,42 @@
   #^{:doc "Removes the gave with given id."}
   remove-game! [id]
   (do
-    (if (contains-game? @games id)
+    (if
+      (contains-game? @games id)
       (swap! remove-game id))
     nil))
 
-(defn-
+(defn
   #^{:doc "Gets the ids of all games."}
   list-games []
   (keys @games))
 
 ; ==== Game manipulation ====
 
-; TODO
+(defn
+  #^{:doc  "Makes a move on the game with the given id."}
+  move! [id player x y]
+  (do
+    (when-not (contains-game? @games id) (throw (IllegalArgumentException. "There is no game with the given id.")))
+    (let [game (get-game id)
+          state (:state game)]
+      (when-not (othello/valid-board-move? board player x y)
+        (throw (IllegalArgumentException. "Can not move at that position.")))
+      (when (not= (:player-in-turn @state) player)
+        (throw (IllegalArgumentException. "The player is not in turn.")))
+      (swap! state othello/move player x y))))
+
+(defn undo!
+  ([id] (undo! id 1))
+  ([id number-of-moves]
+    (let [game (get-game id)
+          state (:state game)
+          state-history (:state-history game)]
+      (when (< (dec (count @state-history)) number-of-moves)
+        (throw (IllegalArgumentException. "You can not undo, the history contains too few moves.")))
+        (reset! state (nth @state-history number-of-moves))
+        (swap! board-history (partial drop (inc number-of-moves)))
+        nil)))
 
 ;
 ; Old stuff below.
@@ -88,49 +117,49 @@
 
 
 ; The board with a history added
-(def board (ref ()))
-(def board-history (ref ()))
-(add-watch board :history (partial add-to-history! board-history))
+;(def board (ref ()))
+;(def board-history (ref ()))
+;(add-watch board :history (partial add-to-history! board-history))
+;
+;; The player in turn with a history added
+;(def player-in-turn (ref ()))
+;(def player-in-turn-history (ref ()))
+;(add-watch player-in-turn :history (partial add-to-history! player-in-turn-history))
+;
+;(def players (atom ()))
+;
+;; Mutating the model
+;; TODO: Write some kind of (integration) tests for these methods
+;; TODO: How to get better names in the API but still use good names for the refs?
+;(comment (defn create-game! [a-board the-players]
+;           (do
+;             (reset! players the-players)
+;             (dosync
+;               (ref-set board a-board)
+;               (ref-set player-in-turn (first the-players)))
+;             nil)))
+;
+;(defn move! [player x y]
+;  (do
+;    (when (not= player @player-in-turn)
+;      (throw (IllegalArgumentException. "The player is not in turn.")))
+;    (dosync
+;      (alter board #(othello/move % player x y))
+;      (alter player-in-turn #(othello/next-player-in-turn @board @players %))
+;      nil)))
 
-; The player in turn with a history added
-(def player-in-turn (ref ()))
-(def player-in-turn-history (ref ()))
-(add-watch player-in-turn :history (partial add-to-history! player-in-turn-history))
-
-(def players (atom ()))
-
-; Mutating the model
-; TODO: Write some kind of (integration) tests for these methods
-; TODO: How to get better names in the API but still use good names for the refs?
-(comment (defn create-game! [a-board the-players]
-           (do
-             (reset! players the-players)
-             (dosync
-               (ref-set board a-board)
-               (ref-set player-in-turn (first the-players)))
-             nil)))
-
-(defn move! [player x y]
-  (do
-    (when (not= player @player-in-turn)
-      (throw (IllegalArgumentException. "The player is not in turn.")))
-    (dosync
-      (alter board #(othello/move % player x y))
-      (alter player-in-turn #(othello/next-player-in-turn @board @players %))
-      nil)))
-
-(defn undo!
-  ([] (undo! 1))
-  ([number-of-moves]
-    (do
-      (when (< (dec (count @board-history)) number-of-moves)
-        (throw (IllegalArgumentException. "You can not undo, the history contains too few moves.")))
-      (dosync
-        (ref-set board (nth @board-history number-of-moves))
-        (alter board-history (partial drop (inc number-of-moves)))
-        (ref-set player-in-turn (nth @player-in-turn-history number-of-moves))
-        (alter player-in-turn-history (partial drop (inc number-of-moves)))
-        nil))))
+;(defn undo!
+;  ([] (undo! 1))
+;  ([number-of-moves]
+;    (do
+;      (when (< (dec (count @board-history)) number-of-moves)
+;        (throw (IllegalArgumentException. "You can not undo, the history contains too few moves.")))
+;      (dosync
+;        (ref-set board (nth @board-history number-of-moves))
+;        (alter board-history (partial drop (inc number-of-moves)))
+;        (ref-set player-in-turn (nth @player-in-turn-history number-of-moves))
+;        (alter player-in-turn-history (partial drop (inc number-of-moves)))
+;        nil))))
 
 
 

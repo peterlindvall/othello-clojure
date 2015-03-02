@@ -13,7 +13,7 @@
 ; ==== Games collection manipulation ====
 
 (defn- add-to-history! [history key identity old new]
-  (swap! history conj new))
+  (dosync (alter history conj new)))
 
 (defn-
   #^{:doc  "Checks if a given game id exist in the games collection."
@@ -31,11 +31,12 @@
   #^{:doc "Creates a game consisting of the given board, players and id.
             The first player in the players list will be the first one to play."}
   create-game [board players id]
-  (let [state (atom {})
-        state-history (atom '())]
+  (let [state (ref {})
+        state-history (ref '())]
     (do
       (add-watch state :history (partial add-to-history! state-history))
-      (reset! state {:board board :player-in-turn (first players)})
+      (dosync
+        (ref-set state {:board board :player-in-turn (first players)}))
       {:state         state
        :state-history state-history
        :players       players
@@ -100,17 +101,18 @@
         (throw (IllegalArgumentException. "The player is not in turn.")))
       (swap! state othello/move player x y))))
 
-(comment (defn undo!
-           ([id] (undo! id 1))
-           ([id number-of-moves]
-             (let [game (get-game id)
-                   state (:state game)
-                   state-history (:state-history game)]
-               (when (< (dec (count @state-history)) number-of-moves)
-                 (throw (IllegalArgumentException. "You can not undo, the history contains too few moves.")))
-               (reset! state (nth @state-history number-of-moves))
-               (swap! board-history (partial drop (inc number-of-moves)))
-               nil))))
+(defn undo!
+  ([id] (undo! id 1))
+  ([id number-of-moves]
+    (let [game (get-game id)
+          state (:state game)
+          state-history (:state-history game)]
+      (when (< (dec (count @state-history)) number-of-moves)
+        (throw (IllegalArgumentException. "You can not undo, the history contains too few moves.")))
+      (dosync
+        (ref-set state (nth @state-history number-of-moves))
+        (alter state-history (partial drop (inc number-of-moves))))
+      nil)))
 
 ;
 ; Old stuff below.

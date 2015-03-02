@@ -7,5 +7,5 @@
     `(let [equal# (= ~actual ~expected)]
        (do
          (when-not equal#
-                    (println "Actual:\t\t" ~actual "\nExpected:\t" ~expected))
+           (println "Actual:\t\t" ~actual "\nExpected:\t" ~expected))
          (is (= ~actual ~expected) ~message)))))

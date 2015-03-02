@@ -15,7 +15,7 @@
   (swap! history conj new))
 
 (defn-
-  #^{:doc "Checks if a given game id exist in the games collection."
+  #^{:doc  "Checks if a given game id exist in the games collection."
      :test (fn []
              (is (contains-game? {"game1" {}} "game1"))
              (is (not (contains-game? {"game1" {}} "game2"))))}
@@ -27,7 +27,7 @@
   (get @games id))
 
 (defn-
-  #^{:doc  "Creates a game consisting of the given board, players and id.
+  #^{:doc "Creates a game consisting of the given board, players and id.
             The first player in the players list will be the first one to play."}
   create-game [board players id]
   (let [state (atom {})
@@ -54,7 +54,7 @@
     (assoc games (:id game) game)))
 
 (defn-
-  #^{:doc "Removes the gave with given id from the games collection."
+  #^{:doc  "Removes the gave with given id from the games collection."
      :test (fn []
              (is (= (remove-game {"game1" {}} "game1") {}))
              (is (= (remove-game {"game1" {} "game2" {:test "test"}} "game1") {"game2" {:test "test"}}))
@@ -87,29 +87,29 @@
 ; ==== Game manipulation ====
 
 (defn
-  #^{:doc  "Makes a move on the game with the given id."}
+  #^{:doc "Makes a move on the game with the given id."}
   move! [id player x y]
   (do
     (when-not (contains-game? @games id) (throw (IllegalArgumentException. "There is no game with the given id.")))
     (let [game (get-game id)
           state (:state game)]
-      (when-not (othello/valid-board-move? board player x y)
+      (when-not (othello/valid-board-move? (:board @state) player x y)
         (throw (IllegalArgumentException. "Can not move at that position.")))
       (when (not= (:player-in-turn @state) player)
         (throw (IllegalArgumentException. "The player is not in turn.")))
       (swap! state othello/move player x y))))
 
-(defn undo!
-  ([id] (undo! id 1))
-  ([id number-of-moves]
-    (let [game (get-game id)
-          state (:state game)
-          state-history (:state-history game)]
-      (when (< (dec (count @state-history)) number-of-moves)
-        (throw (IllegalArgumentException. "You can not undo, the history contains too few moves.")))
-        (reset! state (nth @state-history number-of-moves))
-        (swap! board-history (partial drop (inc number-of-moves)))
-        nil)))
+(comment (defn undo!
+           ([id] (undo! id 1))
+           ([id number-of-moves]
+             (let [game (get-game id)
+                   state (:state game)
+                   state-history (:state-history game)]
+               (when (< (dec (count @state-history)) number-of-moves)
+                 (throw (IllegalArgumentException. "You can not undo, the history contains too few moves.")))
+               (reset! state (nth @state-history number-of-moves))
+               (swap! board-history (partial drop (inc number-of-moves)))
+               nil))))
 
 ;
 ; Old stuff below.

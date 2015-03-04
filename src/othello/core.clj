@@ -225,14 +225,16 @@
                (is= (next-player-in-turn board players "W") "B")
                (is= (next-player-in-turn board players "B") "O")
                (is= (next-player-in-turn board players "O") "B"))
-             (is= (next-player-in-turn (simple-string->board ".WWWWB.") '("W" "B") "W") "B"))}
+             (is= (next-player-in-turn (simple-string->board ".WWWWB.") '("W" "B") "W") "B")
+             (is (nil? (next-player-in-turn (simple-string->board "WWW") '("W" "B") "W"))))}
   next-player-in-turn [board players current-player]
-  (let [current-index (.indexOf players current-player)
+  (let [original-index (.indexOf players current-player)
         get-next-index #(mod (inc %1) (count players))]
-    (loop [next-index (get-next-index current-index)]
+    (loop [next-index (get-next-index original-index)]
       (let [next-player (nth players next-index)]
         (cond
           (has-valid-move board next-player) next-player
+          (= next-index original-index) nil
           :else (recur (get-next-index next-index)))))))
 
 (defn
@@ -261,6 +263,19 @@
                (is= (history->string history board->string)
                     ".BWBW.\n..BBW.\n\nWWWBW.\n..BBW.\n\nWWWBW.\n..BBBB\n")))}
   history->string [history item->string]
-  (clojure.string/join "\n"
-                       (for [item history]
-                         (item->string item))))
+  (clojure.string/join "\n" (for [item history] (item->string item))))
+
+(defn
+  #^{:doc  "Returns a string representation of the state."
+     :test (fn []
+             (is= (state->string
+                    {:board (simple-string->board ".WBO."
+                                                  "OBWWW")
+                     :player-in-turn "O"})
+                  ".WBO.\nOBWWW\nPlayer in turn: O\n"))}
+  state->string [state]
+  (str
+    (board->string (:board state))
+    "Player in turn: "
+    (:player-in-turn state)
+    "\n"))

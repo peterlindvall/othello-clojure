@@ -1,4 +1,4 @@
-(ns othello.boards
+(ns othello.board
   "Collection of functions for creating different types of predesigned Othello boards."
   (require [othello.core :as othello])
   (:use [clojure.test :only (is)]

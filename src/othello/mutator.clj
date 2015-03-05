@@ -3,7 +3,7 @@
   (:require [othello.core :as core])
   (:use [clojure.test :only (deftest is are run-tests)]
         [clojure.repl :only (doc)]
-        [util.core :only (uuid soft-deref add-to-history!)]
+        [util.core :only (uuid ->value add-to-history!)]
         [test.core :only (is=)]))
 
 (defn-
@@ -16,26 +16,27 @@
 
 (defn-
   #^{:doc "Creates a game consisting of the given board, players and id.
-            The first player in the players list will be the first one to play."}
+  The states vector represents the history of all states, with the last state being the current state.
+  The first player in the players list will be the first one to play."}
   create-game [board players id]
-  (let [state (ref {})
-        state-history (ref '())]
-    (do
-      (add-watch state :history (partial add-to-history! state-history))
-      (dosync
-        (ref-set state {:board board :player-in-turn (first players)}))
-      {:state         state
-       :state-history state-history
-       :players       players
-       :id            id})))
+  (let [states (atom [])]
+    (reset! states [{:board board :player-in-turn (first players)}])
+    {:states  states
+     :players players
+     :id      id}))
+
+(defn
+  #^{:doc "Returns the current state of the game."}
+  get-state [game]
+  (last (->value (:states game))))
 
 (defn-
   #^{:doc  "Adds the given game to the games container."
      :test (fn []
              (let [game1 (create-game (core/simple-string->board "WB") ["W" "B"] "game1")
                    game2 (create-game (core/simple-string->board ".BWB") ["B" "W"] "game2")]
-               (is= (soft-deref (add-new-game {} game1)) (soft-deref {"game1" game1}))
-               (is= (soft-deref (add-new-game {"game1" game1} game2)) (soft-deref {"game1" game1 "game2" game2}))
+               (is= (->value (add-new-game {} game1)) (->value {"game1" game1}))
+               (is= (->value (add-new-game {"game1" game1} game2)) (->value {"game1" game1 "game2" game2}))
                (is (thrown? IllegalArgumentException (add-new-game {"game1" {}} game1)))))}
   add-new-game [games game]
   (do
@@ -45,8 +46,8 @@
 (defn-
   #^{:doc  "Removes the gave with given id from the games collection."
      :test (fn []
-             (is (= (remove-game {"game1" {}} "game1") {}))
-             (is (= (remove-game {"game1" {} "game2" {:test "test"}} "game1") {"game2" {:test "test"}}))
+             (is= (remove-game {"game1" {}} "game1") {})
+             (is= (remove-game {"game1" {} "game2" {:test "test"}} "game1") {"game2" {:test "test"}})
              (is (thrown? IllegalArgumentException (remove-game {} "game1"))))}
   remove-game [games id]
   (do
@@ -81,37 +82,34 @@
 
 
 (defn
-  #^{:doc  "Returns an immutable representation of the game with the given id."}
+  #^{:doc "Returns an immutable representation of the game with the given id."}
   get-game [games id]
-  (soft-deref (get @games id)))
+  (->value (get @games id)))
 
 
 (defn
-  #^{:doc  "Makes a move on the game with the given id."}
+  #^{:doc "Makes a move on the game with the given id."}
   move! [games id player x y]
   (do
     (when-not (contains-game? @games id) (throw (IllegalArgumentException. "There is no game with the given id.")))
     (let [game (get @games id)
-          state (:state game)]
-      (when-not (core/valid-board-move? (:board @state) player x y)
+          state (get-state game)
+          states (:states game)]
+      (when-not (core/valid-board-move? (:board state) player x y)
         (throw (IllegalArgumentException. "Can not move at that position.")))
-      (when (not= (:player-in-turn @state) player)
+      (when (not= (:player-in-turn state) player)
         (throw (IllegalArgumentException. "The player is not in turn.")))
-      (dosync
-        (alter state core/move (:players game) player x y)))))
+      (swap! states #(conj %1 (core/move (last %1) (:players game) player x y))))))
 
 
 (defn undo!
-  #^{:doc  "Undo the given number of moves at the game with given id."}
+  #^{:doc "Undo the given number of moves at the game with given id."}
   [games id number-of-moves]
   (let [game (get @games id)
-        state (:state game)
-        state-history (:state-history game)]
-    (when (< (dec (count @state-history)) number-of-moves)
+        states (:states game)]
+    (when (< (dec (count @states)) number-of-moves)
       (throw (IllegalArgumentException. "You can not undo, the history contains too few moves.")))
-    (dosync
-      (ref-set state (nth @state-history number-of-moves))
-      (alter state-history (partial drop (inc number-of-moves))))
+    (swap! states (partial drop-last number-of-moves))
     nil))
 
 ;; Integration tests of this namespace
@@ -125,8 +123,8 @@
         games (atom {})
         our-assert (fn [id & expected-board-as-string]
                      (is=
-                       (:board (:state (get-game games id)))
-                       (apply core/simple-string->board expected-board-as-string)))]
+                       (apply core/simple-string->board expected-board-as-string)
+                       (:board (get-state (get-game games id)))))]
     (new-game! games board players "1")
     (new-game! games board players "2")
     (new-game! games board players "3")

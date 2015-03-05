@@ -9,19 +9,19 @@
   #^{:doc "Works like clojure.core/deref except that if the given value is not something dereferable,
           the value will simply be returned. If the given value is a collection, it will be traversed and dereferenced."
      :test (fn []
-             (is= (soft-deref "test") "test")
-             (is= (soft-deref (atom "test")) "test")
-             (is= (soft-deref (ref "test")) "test")
-             (is= (soft-deref (agent "test")) "test")
-             (is= (soft-deref nil) nil)
-             (is= (soft-deref {:test (ref "test")}) {:test "test"})
-             (is= (soft-deref {:outer {:test (ref "test")}}) {:outer {:test "test"}})
-             (is= (soft-deref {:outer (ref {:test (ref "test")})}) {:outer {:test "test"}})
-             (is= (soft-deref (list (atom {:very (ref "nested")}) #{(atom "so") "nested"})) (list {:very "nested"} #{"so" "nested"})))}
-  soft-deref [object]
+             (is= (->value "test") "test")
+             (is= (->value (atom "test")) "test")
+             (is= (->value (ref "test")) "test")
+             (is= (->value (agent "test")) "test")
+             (is= (->value nil) nil)
+             (is= (->value {:test (ref "test")}) {:test "test"})
+             (is= (->value {:outer {:test (ref "test")}}) {:outer {:test "test"}})
+             (is= (->value {:outer (ref {:test (ref "test")})}) {:outer {:test "test"}})
+             (is= (->value (list (atom {:very (ref "nested")}) #{(atom "so") "nested"})) (list {:very "nested"} #{"so" "nested"})))}
+  ->value [object]
   (postwalk (fn [value]
               (if (instance? clojure.lang.IDeref value)
-                (soft-deref @value)
+                (->value @value)
                 value))
             object))
 (defn

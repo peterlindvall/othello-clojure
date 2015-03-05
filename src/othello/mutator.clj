@@ -73,15 +73,18 @@
       (swap! games remove-game id))
     nil))
 
+
 (defn
   #^{:doc "Gets the ids of all games."}
   list-games [games]
   (keys @games))
 
+
 (defn
   #^{:doc  "Returns an immutable representation of the game with the given id."}
   get-game [games id]
   (soft-deref (get @games id)))
+
 
 (defn
   #^{:doc  "Makes a move on the game with the given id."}
@@ -96,6 +99,7 @@
         (throw (IllegalArgumentException. "The player is not in turn.")))
       (dosync
         (alter state core/move (:players game) player x y)))))
+
 
 (defn undo!
   #^{:doc  "Undo the given number of moves at the game with given id."}

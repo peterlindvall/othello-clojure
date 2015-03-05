@@ -272,7 +272,9 @@
                     {:board (simple-string->board ".WBO."
                                                   "OBWWW")
                      :player-in-turn "O"})
-                  ".WBO.\nOBWWW\nPlayer in turn: O\n"))}
+                  (str ".WBO.\n"
+                       "OBWWW\n"
+                       "Player in turn: O\n")))}
   state->string [state]
   (str
     (board->string (:board state))

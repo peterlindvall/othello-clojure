@@ -1,6 +1,6 @@
 (ns util.core
   "Assorted utility functions."
-  (:use [clojure.test :only (deftest is are run-tests)]
+  (:use [clojure.test :only (is)]
         [clojure.repl :only (doc)]
         [clojure.walk :only (postwalk)]
         [test.core :only (is=)]))
@@ -18,8 +18,7 @@
              (is= (soft-deref {:outer {:test (ref "test")}}) {:outer {:test "test"}})
              (is= (soft-deref {:outer (ref {:test (ref "test")})}) {:outer {:test "test"}})
              (is= (soft-deref (list (atom {:very (ref "nested")}) #{(atom "so") "nested"})) (list {:very "nested"} #{"so" "nested"})))}
-  soft-deref
-  [object]
+  soft-deref [object]
   (postwalk (fn [value]
               (if (instance? clojure.lang.IDeref value)
                 (soft-deref @value)

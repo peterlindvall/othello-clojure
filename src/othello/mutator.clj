@@ -4,7 +4,8 @@
   (:use [clojure.test :only (deftest is are run-tests)]
         [clojure.repl :only (doc)]
         [util.core :only (uuid ->value add-to-history!)]
-        [test.core :only (is=)]))
+        [test.core :only (is=)]
+        [othello.board :only (square-board)]))
 
 (defn-
   #^{:doc  "Checks if a given game id exist is included in the games."
@@ -157,3 +158,43 @@
                 ".BW."
                 "....")
     (is (not (contains-game? @games "4")))))
+
+
+;; FIXME: Testet beror på hastigheten. Strategin beräknas på ett gammalt bräde och läggs på ett uppdaterat bräde.
+(deftest parallelism
+  (let [players                    '("W" "B")
+        board-size                 4
+        board                      (othello.board/square-board board-size players)
+        games                      (atom {})
+        game-id                    "1"
+        upper-left-strategy        (fn [board player]
+                                     (do
+                                       (let [question   (str "Player: " player ", at board:\n" (core/board->string board) "\n")
+                                             coordinate (first
+                                                          (filter
+                                                            #(othello.core/valid-board-move? board player (first %1) (second %1))
+                                                            (sort (keys board))))
+                                             to-string  (str question "Answer: " coordinate "\n\n")]
+                                         (print to-string)
+                                         coordinate)))
+        play-until-none-is-in-turn (fn [games game-id player thread-id]
+                                     (if (not (nil? (:player-in-turn (get-state (get-game games game-id)))))
+                                       (let [board      (:board (get-state (get-game games game-id)))
+                                             coordinate (upper-left-strategy board player)]
+                                         (try
+                                           (move! games game-id player (first coordinate) (second coordinate))
+                                           (print (str "Played in thread: " thread-id "\n" (core/board->string (:board (get-state (get-game games game-id)))) "\n"))
+                                           (catch Exception e (print "RETRYING\n\n")))
+                                         (recur games game-id player thread-id))
+                                       (print "We are now ending this thread:" thread-id "\n")))]
+    (new-game! games board players game-id)
+    (def futures [(future (play-until-none-is-in-turn games game-id (first players) "A"))
+                  (future (play-until-none-is-in-turn games game-id (first players) "B"))
+                  (future (play-until-none-is-in-turn games game-id (first players) "C"))
+                  (future (play-until-none-is-in-turn games game-id (second players) "D"))])
+    (doseq [f futures] (deref f 1000 "Stopped!"))
+    (is= (:board (get-state (get-game games game-id)))
+         (core/simple-string->board "WBBB"
+                                    "BWWW"
+                                    "BBWW"
+                                    "BWWW"))))

@@ -6,7 +6,7 @@
 
 (defn
   #^{:doc  "Creates a board from the given string arguments. Nodes can be left out with space characters.
-            The dot character cannot be used as player id. The number of players cannot be more than 10."
+            The dot character cannot be used as player id. There can be up to 10 players."
      :test (fn []
              (is= (string->board '("W" "B") (list "0..1"
                                                   " 0.."
@@ -38,7 +38,7 @@
                      [[x y] (map-strategy occupant)])))))))
 
 (defn
-  #^{:doc  "A board is created from the string. The player ids must be of length one and excluding the dot character."
+  #^{:doc  "A board is created from the string. The player ids must be of length one. The dot character cannot be used as player id."
      :test (fn []
              (is= (simple-string->board ".BW"
                                         " BBW"
@@ -59,7 +59,7 @@
   (contains? board [x y]))
 
 (defn
-  #^{:doc  "Acquire the occupant player id at the given coordinate."
+  #^{:doc  "Returns the id for the player occupying the given coordinate."
      :test (fn []
              (let [board {[0 0] "." [1 0] "W" [2 0] "."
                           [0 1] "B" [1 1] "W" [2 1] "W"}]
@@ -82,7 +82,7 @@
   (apply max (map #(nth % n) (keys board))))
 
 (defn
-  #^{:doc  "A nice string version of the board."
+  #^{:doc  "Returns nice string version of the board."
      :test (fn []
              (let [board (simple-string->board ".W."
                                                " BWB"

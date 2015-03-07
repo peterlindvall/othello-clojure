@@ -1,5 +1,5 @@
 (ns othello.mutator
-  "Namespace for holding all Othello games in memory state."
+  "Namespace for operations on the state."
   (:require [othello.core :as core])
   (:use [clojure.test :only (deftest is are run-tests)]
         [clojure.repl :only (doc)]
@@ -7,13 +7,15 @@
         [test.core :only (is=)]
         [othello.board :only (square-board)]))
 
+
 (defn-
-  #^{:doc  "Checks if a given game id exist is included in the games."
+  #^{:doc  "Checks if a game with the given id exists."
      :test (fn []
              (is (contains-game? {"game1" {}} "game1"))
              (is (not (contains-game? {"game1" {}} "game2"))))}
   contains-game? [games id]
   (contains? games id))
+
 
 (defn-
   #^{:doc "Creates a game consisting of the given board, players and id.
@@ -26,10 +28,12 @@
      :players players
      :id      id}))
 
+
 (defn
   #^{:doc "Returns the current state of the game."}
   get-state [game]
   (last (->value (:states game))))
+
 
 (defn-
   #^{:doc  "Adds the given game to the games container."
@@ -44,8 +48,9 @@
     (when (contains-game? games (game :id)) (throw (IllegalArgumentException. "Game with given id already exist.")))
     (assoc games (:id game) game)))
 
+
 (defn-
-  #^{:doc  "Removes the gave with given id from the games collection."
+  #^{:doc  "Removes the game with given id from the games container."
      :test (fn []
              (is= (remove-game {"game1" {}} "game1") {})
              (is= (remove-game {"game1" {} "game2" {:test "test"}} "game1") {"game2" {:test "test"}})
@@ -55,10 +60,12 @@
     (when (not (contains-game? games id)) (throw (IllegalArgumentException. "Game with given id does not exist.")))
     (dissoc games id)))
 
-;; Mutable part of the namespace
+;;------------------------------
+;; Functions mutating states
+;;------------------------------
 
 (defn
-  #^{:doc "Creates a game from the given board, players and id and adds it to the games container."}
+  #^{:doc "Creates a game with the given board, players and id and adds it to the games container."}
   new-game!
   ([games board players] (new-game! games board players (uuid)))
   ([games board players id]
@@ -67,7 +74,7 @@
       (:id game))))
 
 (defn
-  #^{:doc "Removes the gave with given id."}
+  #^{:doc "Removes the game with given id."}
   remove-game! [games id]
   (do
     (if
@@ -77,7 +84,7 @@
 
 
 (defn
-  #^{:doc "Gets the ids of all games."}
+  #^{:doc "Returns the ids of the games in the games container."}
   list-games [games]
   (keys @games))
 
@@ -86,6 +93,7 @@
   #^{:doc "Returns an immutable representation of the game with the given id."}
   get-game [games id]
   (->value (get @games id)))
+
 
 (defn
   #^{:doc "Makes a move on the game with the given id."}
@@ -100,17 +108,14 @@
       (when (not= (:player-in-turn state) player)
         (throw (IllegalArgumentException. "The player is not in turn.")))
       (swap! states #(conj %1
-                           (let [coordinate (strategy (:board (get-state (get-game games id))) player)
-                                 x (first coordinate)
-                                 y (second coordinate)]
-                             (core/move (last %1) (:players game) player x y)))))))
-
-
-
+      	     (let [coordinate (strategy (:board (get-state (get-game games id))) player)
+	     	  x (first coordinate)
+		  y (second coordinate)]                      
+	     (core/move (last %1) (:players game) player x y)))))))
 
 
 (defn undo!
-  #^{:doc "Undo the given number of moves at the game with given id."}
+  #^{:doc "Undoes the given number of moves at the game with given id."}
   [games id number-of-moves]
   (let [game (get @games id)
         states (:states game)]
@@ -119,15 +124,18 @@
     (swap! states (partial drop-last number-of-moves))
     nil))
 
-;; A move strategy
 
-(defn- upper-left-strategy [board player]
+(defn- 
+  #^{:doc "A move strategy."}
+  upper-left-strategy [board player]
   (first
     (filter
       #(othello.core/valid-board-move? board player (first %1) (second %1))
       (sort (keys board)))))
 
+;;------------------------------------
 ;; Integration tests of this namespace
+;;------------------------------------
 
 (deftest games-scenario
   (let [board (core/simple-string->board "...."

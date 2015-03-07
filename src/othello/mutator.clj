@@ -90,7 +90,8 @@
 
 (defn
   #^{:doc "Makes a move on the game with the given id."}
-  move! [games id player x y]
+  move!
+  ([games id player x y]
   (do
     (when-not (contains-game? @games id) (throw (IllegalArgumentException. "There is no game with the given id.")))
     (let [game (get @games id)
@@ -101,6 +102,21 @@
       (when (not= (:player-in-turn state) player)
         (throw (IllegalArgumentException. "The player is not in turn.")))
       (swap! states #(conj %1 (core/move (last %1) (:players game) player x y))))))
+  ([games id player strategy]
+    (when-not (contains-game? @games id) (throw (IllegalArgumentException. "There is no game with the given id.")))
+    (let [game (get @games id)
+          state (get-state game)
+          states (:states game)]
+      (when (not= (:player-in-turn state) player)
+        (throw (IllegalArgumentException. "The player is not in turn.")))
+      (swap! states #(conj %1
+                           (let [coordinate (strategy (:board (get-state (get-game games id))) player)
+                                 x (first coordinate)
+                                 y (second coordinate)]
+                             (core/move (last %1) (:players game) player x y)))))))
+
+
+
 
 
 (defn undo!
@@ -112,6 +128,14 @@
       (throw (IllegalArgumentException. "You can not undo, the history contains too few moves.")))
     (swap! states (partial drop-last number-of-moves))
     nil))
+
+;; A move strategy
+
+(defn- upper-left-strategy [board player]
+  (first
+    (filter
+      #(othello.core/valid-board-move? board player (first %1) (second %1))
+      (sort (keys board)))))
 
 ;; Integration tests of this namespace
 
@@ -134,8 +158,8 @@
     (move! games "1" "B" 0 1)
     (move! games "1" "W" 2 0)
     (move! games "1" "B" 3 1)
-    ;; On board 2
-    (move! games "2" "B" 0 1)
+    ;; On board 2 with a strategy
+    (move! games "2" "B" upper-left-strategy)
     ;; On board 3
     (move! games "3" "B" 0 1)
     (undo! games "3" 1)
@@ -160,41 +184,31 @@
     (is (not (contains-game? @games "4")))))
 
 
-;; FIXME: Testet beror på hastigheten. Strategin beräknas på ett gammalt bräde och läggs på ett uppdaterat bräde.
 (deftest parallelism
   (let [players                    '("W" "B")
-        board-size                 4
+        board-size                 8
         board                      (othello.board/square-board board-size players)
         games                      (atom {})
         game-id                    "1"
-        upper-left-strategy        (fn [board player]
-                                     (do
-                                       (let [question   (str "Player: " player ", at board:\n" (core/board->string board) "\n")
-                                             coordinate (first
-                                                          (filter
-                                                            #(othello.core/valid-board-move? board player (first %1) (second %1))
-                                                            (sort (keys board))))
-                                             to-string  (str question "Answer: " coordinate "\n\n")]
-                                         (print to-string)
-                                         coordinate)))
         play-until-none-is-in-turn (fn [games game-id player thread-id]
                                      (if (not (nil? (:player-in-turn (get-state (get-game games game-id)))))
-                                       (let [board      (:board (get-state (get-game games game-id)))
-                                             coordinate (upper-left-strategy board player)]
+                                       (do
                                          (try
-                                           (move! games game-id player (first coordinate) (second coordinate))
-                                           (print (str "Played in thread: " thread-id "\n" (core/board->string (:board (get-state (get-game games game-id)))) "\n"))
-                                           (catch Exception e (print "RETRYING\n\n")))
-                                         (recur games game-id player thread-id))
-                                       (print "We are now ending this thread:" thread-id "\n")))]
+                                           (move! games game-id player upper-left-strategy)
+                                           (catch Exception e "Retrying"))
+                                         (recur games game-id player thread-id))))]
     (new-game! games board players game-id)
     (def futures [(future (play-until-none-is-in-turn games game-id (first players) "A"))
                   (future (play-until-none-is-in-turn games game-id (first players) "B"))
                   (future (play-until-none-is-in-turn games game-id (first players) "C"))
                   (future (play-until-none-is-in-turn games game-id (second players) "D"))])
-    (doseq [f futures] (deref f 1000 "Stopped!"))
+    (doseq [f futures] (deref f 1000 "Stopped!\n"))
     (is= (:board (get-state (get-game games game-id)))
-         (core/simple-string->board "WBBB"
-                                    "BWWW"
-                                    "BBWW"
-                                    "BWWW"))))
+         (core/simple-string->board "WWWWWWWB"
+                                    "WWWBBWWB"
+                                    "WWWWWBWB"
+                                    "WWWBWWBB"
+                                    "WWWWBWBB"
+                                    "WWWWWBWB"
+                                    "WWWWWWBB"
+                                    "BBBBBBBB"))))

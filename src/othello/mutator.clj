@@ -7,6 +7,7 @@
         [test.core :only (is=)]
         [othello.board :only (square-board)]))
 
+
 (defn-
   #^{:doc  "Checks if a given game id exist is included in the games."
      :test (fn []
@@ -14,6 +15,7 @@
              (is (not (contains-game? {"game1" {}} "game2"))))}
   contains-game? [games id]
   (contains? games id))
+
 
 (defn-
   #^{:doc "Creates a game consisting of the given board, players and id.
@@ -26,10 +28,12 @@
      :players players
      :id      id}))
 
+
 (defn
   #^{:doc "Returns the current state of the game."}
   get-state [game]
   (last (->value (:states game))))
+
 
 (defn-
   #^{:doc  "Adds the given game to the games container."
@@ -44,6 +48,7 @@
     (when (contains-game? games (game :id)) (throw (IllegalArgumentException. "Game with given id already exist.")))
     (assoc games (:id game) game)))
 
+
 (defn-
   #^{:doc  "Removes the gave with given id from the games collection."
      :test (fn []
@@ -55,6 +60,7 @@
     (when (not (contains-game? games id)) (throw (IllegalArgumentException. "Game with given id does not exist.")))
     (dissoc games id)))
 
+
 ;; Mutable part of the namespace
 
 (defn
@@ -65,6 +71,7 @@
     (let [game (create-game board players id)]
       (swap! games add-new-game game)
       (:id game))))
+
 
 (defn
   #^{:doc "Removes the gave with given id."}
@@ -116,9 +123,6 @@
                              (core/move (last %1) (:players game) player x y)))))))
 
 
-
-
-
 (defn undo!
   #^{:doc "Undo the given number of moves at the game with given id."}
   [games id number-of-moves]
@@ -129,6 +133,7 @@
     (swap! states (partial drop-last number-of-moves))
     nil))
 
+
 ;; A move strategy
 
 (defn- upper-left-strategy [board player]
@@ -136,6 +141,7 @@
     (filter
       #(othello.core/valid-board-move? board player (first %1) (second %1))
       (sort (keys board)))))
+
 
 ;; Integration tests of this namespace
 

@@ -87,21 +87,11 @@
   get-game [games id]
   (->value (get @games id)))
 
-
 (defn
   #^{:doc "Makes a move on the game with the given id."}
   move!
   ([games id player x y]
-  (do
-    (when-not (contains-game? @games id) (throw (IllegalArgumentException. "There is no game with the given id.")))
-    (let [game (get @games id)
-          state (get-state game)
-          states (:states game)]
-      (when-not (core/valid-board-move? (:board state) player x y)
-        (throw (IllegalArgumentException. "Can not move at that position.")))
-      (when (not= (:player-in-turn state) player)
-        (throw (IllegalArgumentException. "The player is not in turn.")))
-      (swap! states #(conj %1 (core/move (last %1) (:players game) player x y))))))
+    (move! games id player (fn [& _] [x y])))
   ([games id player strategy]
     (when-not (contains-game? @games id) (throw (IllegalArgumentException. "There is no game with the given id.")))
     (let [game (get @games id)
@@ -185,11 +175,11 @@
 
 
 (deftest parallelism
-  (let [players                    '("W" "B")
-        board-size                 8
-        board                      (othello.board/square-board board-size players)
-        games                      (atom {})
-        game-id                    "1"
+  (let [players '("W" "B")
+        board-size 8
+        board (othello.board/square-board board-size players)
+        games (atom {})
+        game-id "1"
         play-until-none-is-in-turn (fn [games game-id player thread-id]
                                      (if (not (nil? (:player-in-turn (get-state (get-game games game-id)))))
                                        (do
@@ -202,7 +192,7 @@
                   (future (play-until-none-is-in-turn games game-id (first players) "B"))
                   (future (play-until-none-is-in-turn games game-id (first players) "C"))
                   (future (play-until-none-is-in-turn games game-id (second players) "D"))])
-    (doseq [f futures] (deref f 1000 "Stopped!\n"))
+    (time (doseq [f futures] (deref f 10000 "Stopped!\n")))
     (is= (:board (get-state (get-game games game-id)))
          (core/simple-string->board "WWWWWWWB"
                                     "WWWBBWWB"

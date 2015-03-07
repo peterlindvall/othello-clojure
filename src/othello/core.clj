@@ -240,9 +240,12 @@
 (defn
   #^{:doc  "Returns a new state with a new board and a new player-in-turn."
      :test (fn []
-             (let [board (simple-string->board "..BBWB.")]
-               (is= (move {:board board :player-in-turn "W"} '("W" "B") "W" 1 0)
-                    {:board (simple-string->board ".WWWWB.") :player-in-turn "B"})))}
+             (let [board (simple-string->board "..BBWB.")
+                   state {:board board :player-in-turn "W"},
+                   players '("W" "B")]
+               (is= (move state players "W" 1 0)
+                    {:board (simple-string->board ".WWWWB.") :player-in-turn "B"})
+               (is (thrown? IllegalArgumentException (move state players "W" 3 0)))))}
   move [state players player x y]
   (do
     (when (not= (:player-in-turn state) player) (throw (IllegalArgumentException. "The player is not in turn.")))

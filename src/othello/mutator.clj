@@ -108,10 +108,10 @@
       (when (not= (:player-in-turn state) player)
         (throw (IllegalArgumentException. "The player is not in turn.")))
       (swap! states #(conj %1
-      	     (let [coordinate (strategy (:board (get-state (get-game games id))) player)
-	     	  x (first coordinate)
-		  y (second coordinate)]                      
-	     (core/move (last %1) (:players game) player x y)))))))
+                           (let [coordinate (strategy (:board (get-state (get-game games id))) player)
+                                 x (first coordinate)
+                                 y (second coordinate)]
+                             (core/move (last %1) (:players game) player x y)))))))
 
 
 (defn undo!
@@ -125,7 +125,7 @@
     nil))
 
 
-(defn- 
+(defn-
   #^{:doc "A move strategy."}
   upper-left-strategy [board player]
   (first

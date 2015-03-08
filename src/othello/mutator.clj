@@ -28,11 +28,12 @@
      :players players
      :id      id}))
 
-
 (defn
   #^{:doc "Returns the current state of the game."}
   get-state [game]
-  (last (->value (:states game))))
+  ;Since only states is a derefable, tell ->value to stop at depth 1.
+  ;Not using @ since given game might be a value object (with no derefables in it).
+  (last (->value (:states game) 1)))
 
 
 (defn-
@@ -88,11 +89,14 @@
   list-games [games]
   (keys @games))
 
+(defn
+  -get-game [games id]
+  (get @games id))
 
 (defn
   #^{:doc "Returns an immutable representation of the game with the given id."}
   get-game [games id]
-  (->value (get @games id)))
+  (->value (-get-game games id)))
 
 
 (defn
@@ -108,7 +112,7 @@
       (when (not= (:player-in-turn state) player)
         (throw (IllegalArgumentException. "The player is not in turn.")))
       (swap! states #(conj %1
-                           (let [coordinate (strategy (:board (get-state (get-game games id))) player)
+                           (let [coordinate (strategy (:board (get-state (-get-game games id))) player)
                                  x (first coordinate)
                                  y (second coordinate)]
                              (core/move (last %1) (:players game) player x y)))))))
@@ -147,7 +151,7 @@
         our-assert (fn [id & expected-board-as-string]
                      (is=
                        (apply core/simple-string->board expected-board-as-string)
-                       (:board (get-state (get-game games id)))))]
+                       (:board (get-state (-get-game games id)))))]
     (new-game! games board players "1")
     (new-game! games board players "2")
     (new-game! games board players "3")
@@ -189,7 +193,7 @@
         games (atom {})
         game-id "1"
         play-until-none-is-in-turn (fn [games game-id player thread-id]
-                                     (if (not (nil? (:player-in-turn (get-state (get-game games game-id)))))
+                                     (if (not (nil? (:player-in-turn (get-state (-get-game games game-id)))))
                                        (do
                                          (try
                                            (move! games game-id player upper-left-strategy)
@@ -201,7 +205,7 @@
                   (future (play-until-none-is-in-turn games game-id (first players) "C"))
                   (future (play-until-none-is-in-turn games game-id (second players) "D"))])
     (time (doseq [f futures] (deref f 10000 "Stopped!\n")))
-    (is= (:board (get-state (get-game games game-id)))
+    (is= (:board (get-state (-get-game games game-id)))
          (core/simple-string->board "WWWWWWWB"
                                     "WWWBBWWB"
                                     "WWWWWBWB"

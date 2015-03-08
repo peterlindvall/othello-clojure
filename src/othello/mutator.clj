@@ -204,7 +204,7 @@
                   (future (play-until-none-is-in-turn games game-id (first players) "B"))
                   (future (play-until-none-is-in-turn games game-id (first players) "C"))
                   (future (play-until-none-is-in-turn games game-id (second players) "D"))])
-    (time (doseq [f futures] (deref f 10000 "Stopped!\n")))
+    (doseq [f futures] (deref f 1000 "Stopped!\n"))
     (is= (:board (get-state (-get-game games game-id)))
          (core/simple-string->board "WWWWWWWB"
                                     "WWWBBWWB"

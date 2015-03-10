@@ -60,22 +60,21 @@
                    (let [board (:board state)
                          player-in-turn (:player-in-turn state)
                          ; Evaluates all valid moves for the player in turn and returns the move defined by the taker function argument (min/max in this algorithm).
-                         take-move (fn [taker default-value]
-                                     (apply taker (conj
-                                                    (map
-                                                      #(minimax (core/move state players player-in-turn (first %1) (second %1)) (inc depth))
-                                                      (core/get-valid-moves board player-in-turn))
-                                                    default-value)))]
+                         take-move (fn [taker]
+                                     (apply taker
+                                            (map
+                                              #(minimax (core/move state players player-in-turn (first %1) (second %1)) (inc depth))
+                                              (core/get-valid-moves board player-in-turn))))]
                      (if (or (= depth stop-depth) (core/game-over? state))
                        ; Reached depth limit or in terminal node.
                        ; Evaluate the board with the score heuristic.
                        (score-heuristic board player)
                        (if (maximizing-player? player-in-turn)
                          ; The player that we want to play as good as possible for.
-                         (take-move max Double/NEGATIVE_INFINITY)
+                         (take-move max)
                          ; The opponent (that we assume will play as good as possible.)
                          ; This is why we want to minimize the possible score the opponent can achieve.
-                         (take-move min Double/POSITIVE_INFINITY)))))]
+                         (take-move min)))))]
      (if (core/game-over? state)
        nil
        ; Since the maximizing algorithm only returns the best possible score value, we need to keep track of the first moves ourselves.

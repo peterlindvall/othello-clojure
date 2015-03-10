@@ -270,6 +270,16 @@
   (nil? (:player-in-turn state)))
 
 
+(defn get-score [board player]
+  #^{:doc
+     "Returns the score of the given player for given board.
+     The score is the sum of all nodes occupied by the player on the board."
+     :test (fn []
+             (get-score (simple-string->board "..B.WW" "W") 2)
+             (get-score (simple-string->board "..B.WW" "O") 0))}
+  (count (filter (partial = player) (vals board))))
+
+
 (defn
   #^{:doc  "Merges a history of items into a string."
      :test (fn []

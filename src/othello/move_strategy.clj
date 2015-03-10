@@ -27,6 +27,7 @@
 (defn
   #^{:doc
            "Minimax algorithm as described here: http://en.wikipedia.org/wiki/Minimax.
+           Will make an optimal move for the player-in-turn of the given state.
            Looks ahead in time (by given depth argument) and makes the move that results in the highest score for the player.
            This should theoretically be the best AI possible for an Othello game.
            Assumes that the opponent is playing in an optimal way to maximize the opponent score."
@@ -45,12 +46,20 @@
   ([state players] (minimax-move-strategy state players Double/POSITIVE_INFINITY))
   ([state players depth]
    (let [stop-depth depth
+         ; The player that we want to play as good as possible for.
+         ; Also called the maximizing player (we want to maximize the score).
          player (:player-in-turn state)
          maximizing-player? (partial = player)
-         score-heurestic (fn [board player] (core/get-score board player))
+         ; Measures how good the board is for the maximizing player.
+         ; The higher value the better.
+         score-heuristic (fn [board player] (core/get-score board player))
+         ; The actual minimax algorithm.
+         ; Will only return the best score heuristic value of all moves possible by the maximizing player.
+         ; The actual move that resulted in the score will not be returned.
          minimax (fn minimax [state depth]
                    (let [board (:board state)
                          player-in-turn (:player-in-turn state)
+                         ; Evaluates all valid moves for the player in turn and returns the move defined by the taker function argument (min/max in this algorithm).
                          take-move (fn [taker default-value]
                                      (apply taker (conj
                                                     (map
@@ -59,12 +68,19 @@
                                                     default-value)))]
                      (if (or (= depth stop-depth) (core/game-over? state))
                        ; Reached depth limit or in terminal node.
-                       (score-heurestic board player)
+                       ; Evaluate the board with the score heuristic.
+                       (score-heuristic board player)
                        (if (maximizing-player? player-in-turn)
+                         ; The player that we want to play as good as possible for.
                          (take-move max Double/NEGATIVE_INFINITY)
+                         ; The opponent (that we assume will play as good as possible.)
+                         ; This is why we want to minimize the possible score the opponent can achieve.
                          (take-move min Double/POSITIVE_INFINITY)))))]
      (if (core/game-over? state)
        nil
+       ; Since the maximizing algorithm only returns the best possible score value, we need to keep track of the first moves ourselves.
+       ; By calling the maximizing algorithm on all possible moves that the player has for the beginning state,
+       ; and then picking the move that resulted in the highest score we have picked the best move possible.
        (let [score-moves (map
                            #(do {:score (minimax (core/move state players player (first %1) (second %1)) 1)
                                  :move  %1})

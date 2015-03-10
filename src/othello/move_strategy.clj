@@ -20,6 +20,7 @@
       #(othello.core/valid-board-move? board player (first %1) (second %1))
       (sort (keys board)))))
 
+
 ;;TODO: The score heuristic does not count the opponent score (which might make the player lose because the own score is maximized but the opponent score is still higher).
 ;;TODO: How does it handle multiple players?
 ;;TODO: Speedup with the alpha-beta pruning?

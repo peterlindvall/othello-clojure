@@ -20,9 +20,6 @@
       #(othello.core/valid-board-move? board player (first %1) (second %1))
       (sort (keys board)))))
 
-(defn- get-score [board player]
-  (count (filter (partial = player) (vals board))))
-
 ;;TODO: The score heuristic does not count the opponent score (which might make the player lose because the own score is maximized but the opponent score is still higher).
 ;;TODO: How does it handle multiple players?
 ;;TODO: Speedup with the alpha-beta pruning?
@@ -31,7 +28,8 @@
   #^{:doc
            "Minimax algorithm as described here: http://en.wikipedia.org/wiki/Minimax.
            Looks ahead in time (by given depth argument) and makes the move that results in the highest score for the player.
-           This should theoretically be the best AI possible for an Othello game."
+           This should theoretically be the best AI possible for an Othello game.
+           Assumes that the opponent is playing in an optimal way to maximize the opponent score."
      :test (fn []
              (let [board (core/simple-string->board "..BBWB.."
                                                     "....B..."
@@ -49,6 +47,7 @@
    (let [stop-depth depth
          player (:player-in-turn state)
          maximizing-player? (partial = player)
+         score-heurestic (fn [board player] (core/get-score board player))
          minimax (fn minimax [state depth]
                    (let [board (:board state)
                          player-in-turn (:player-in-turn state)
@@ -60,7 +59,7 @@
                                                     default-value)))]
                      (if (or (= depth stop-depth) (core/game-over? state))
                        ; Reached depth limit or in terminal node.
-                       (get-score board player)
+                       (score-heurestic board player)
                        (if (maximizing-player? player-in-turn)
                          (take-move max Double/NEGATIVE_INFINITY)
                          (take-move min Double/POSITIVE_INFINITY)))))]
@@ -93,7 +92,8 @@
         (let [current-state (last @states)
               new-state (move current-state 10)]
           (reset! states (conj @states new-state))))
-      (comment (print (apply str (map #(str (core/state->string %1)) @states))))
+      ; Uncomment this row to print the states.
+      ;(print (apply str (map #(str (core/state->string %1)) @states)))
       (let [last-state (last @states)
             last-board (:board last-state)]
         (is= (get-score last-board "W") 3)

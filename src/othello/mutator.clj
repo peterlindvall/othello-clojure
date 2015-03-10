@@ -1,6 +1,7 @@
 (ns othello.mutator
-  "Namespace for holding all Othello games in memory state."
-  (:require [othello.core :as core])
+  "Namespace for operations on the state."
+  (:require [othello.core :as core]
+            [othello.move-strategy :as move-strategy])
   (:use [clojure.test :only (deftest is are run-tests)]
         [clojure.repl :only (doc)]
         [util.core :only (uuid ->value add-to-history!)]
@@ -9,7 +10,7 @@
 
 
 (defn-
-  #^{:doc  "Checks if a given game id exist is included in the games."
+  #^{:doc  "Checks if a game with the given id exists."
      :test (fn []
              (is (contains-game? {"game1" {}} "game1"))
              (is (not (contains-game? {"game1" {}} "game2"))))}
@@ -29,12 +30,6 @@
      :id      id}))
 
 
-(defn
-  #^{:doc "Returns the current state of the game."}
-  get-state [game]
-  (last (->value (:states game))))
-
-
 (defn-
   #^{:doc  "Adds the given game to the games container."
      :test (fn []
@@ -50,7 +45,7 @@
 
 
 (defn-
-  #^{:doc  "Removes the gave with given id from the games collection."
+  #^{:doc  "Removes the game with given id from the games container."
      :test (fn []
              (is= (remove-game {"game1" {}} "game1") {})
              (is= (remove-game {"game1" {} "game2" {:test "test"}} "game1") {"game2" {:test "test"}})
@@ -61,10 +56,38 @@
     (dissoc games id)))
 
 
-;; Mutable part of the namespace
+(defn create-player
+  ([id color] (create-player id color "HUMAN" nil))
+  ([id color type strategy]
+    (do
+      (when-not (or (= type "HUMAN") (= type "COMPUTER"))
+        (throw (IllegalArgumentException. "Wrong type. Must be HUMAN or COMPUTER.")))
+      (when (and (= type "COMPUTER") (nil? strategy))
+        (throw (IllegalArgumentException. "Computers must have a strategy.")))
+      (when (and (= type "HUMAN") (not (nil? strategy)))
+        (throw (IllegalArgumentException. "Humans have their own strategies.")))
+      (let [base {:id id
+                  :color color
+                  :type type}]
+        (if (= type "COMPUTER")
+          (assoc base :strategy (atom strategy))
+          base)))))
+
 
 (defn
-  #^{:doc "Creates a game from the given board, players and id and adds it to the games container."}
+  #^{:doc "Returns the current state of the game."}
+  get-state [game]
+  ;Since only states is a derefable, tell ->value to stop at depth 1.
+  ;Not using @ since given game might be a value object (with no derefables in it).
+  (last (->value (:states game) 1)))
+
+
+;;------------------------------
+;; Functions mutating states
+;;------------------------------
+
+(defn
+  #^{:doc "Creates a game with the given board, players and id and adds it to the games container."}
   new-game!
   ([games board players] (new-game! games board players (uuid)))
   ([games board players id]
@@ -74,7 +97,7 @@
 
 
 (defn
-  #^{:doc "Removes the gave with given id."}
+  #^{:doc "Removes the game with given id."}
   remove-game! [games id]
   (do
     (if
@@ -84,7 +107,7 @@
 
 
 (defn
-  #^{:doc "Gets the ids of all games."}
+  #^{:doc "Returns the ids of the games in the games container."}
   list-games [games]
   (keys @games))
 
@@ -93,6 +116,7 @@
   #^{:doc "Returns an immutable representation of the game with the given id."}
   get-game [games id]
   (->value (get @games id)))
+
 
 (defn
   #^{:doc "Makes a move on the game with the given id."}
@@ -107,14 +131,14 @@
       (when (not= (:player-in-turn state) player)
         (throw (IllegalArgumentException. "The player is not in turn.")))
       (swap! states #(conj %1
-                           (let [coordinate (strategy (:board (get-state (get-game games id))) player)
+                           (let [coordinate (strategy (:board (last %1)) player)
                                  x (first coordinate)
                                  y (second coordinate)]
                              (core/move (last %1) (:players game) player x y)))))))
 
 
 (defn undo!
-  #^{:doc "Undo the given number of moves at the game with given id."}
+  #^{:doc "Undoes the given number of moves at the game with given id."}
   [games id number-of-moves]
   (let [game (get @games id)
         states (:states game)]
@@ -124,16 +148,9 @@
     nil))
 
 
-;; A move strategy
-
-(defn- upper-left-strategy [board player]
-  (first
-    (filter
-      #(othello.core/valid-board-move? board player (first %1) (second %1))
-      (sort (keys board)))))
-
-
+;;------------------------------------
 ;; Integration tests of this namespace
+;;------------------------------------
 
 (deftest games-scenario
   (let [board (core/simple-string->board "...."
@@ -145,7 +162,7 @@
         our-assert (fn [id & expected-board-as-string]
                      (is=
                        (apply core/simple-string->board expected-board-as-string)
-                       (:board (get-state (get-game games id)))))]
+                       (:board (get-state (get @games id)))))]
     (new-game! games board players "1")
     (new-game! games board players "2")
     (new-game! games board players "3")
@@ -155,7 +172,7 @@
     (move! games "1" "W" 2 0)
     (move! games "1" "B" 3 1)
     ;; On board 2 with a strategy
-    (move! games "2" "B" upper-left-strategy)
+    (move! games "2" "B" move-strategy/upper-left-strategy)
     ;; On board 3
     (move! games "3" "B" 0 1)
     (undo! games "3" 1)
@@ -187,19 +204,21 @@
         games (atom {})
         game-id "1"
         play-until-none-is-in-turn (fn [games game-id player thread-id]
-                                     (if (not (nil? (:player-in-turn (get-state (get-game games game-id)))))
+                                     (if (not (nil? (:player-in-turn (get-state (get @games game-id)))))
                                        (do
                                          (try
-                                           (move! games game-id player upper-left-strategy)
+                                           (move! games game-id player move-strategy/upper-left-strategy)
                                            (catch Exception e "Retrying"))
                                          (recur games game-id player thread-id))))]
     (new-game! games board players game-id)
-    (def futures [(future (play-until-none-is-in-turn games game-id (first players) "A"))
-                  (future (play-until-none-is-in-turn games game-id (first players) "B"))
-                  (future (play-until-none-is-in-turn games game-id (first players) "C"))
-                  (future (play-until-none-is-in-turn games game-id (second players) "D"))])
-    (time (doseq [f futures] (deref f 10000 "Stopped!\n")))
-    (is= (:board (get-state (get-game games game-id)))
+    (time
+      (do
+        (def futures [(future (play-until-none-is-in-turn games game-id (first players) "A"))
+                      (future (play-until-none-is-in-turn games game-id (first players) "B"))
+                      (future (play-until-none-is-in-turn games game-id (first players) "C"))
+                      (future (play-until-none-is-in-turn games game-id (second players) "D"))])
+        (doseq [f futures] (deref f 1000 "Stopped!\n"))))
+    (is= (:board (get-state (get @games game-id)))
          (core/simple-string->board "WWWWWWWB"
                                     "WWWBBWWB"
                                     "WWWWWBWB"

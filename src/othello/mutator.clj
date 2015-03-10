@@ -59,19 +59,19 @@
 (defn create-player
   ([id color] (create-player id color "HUMAN" nil))
   ([id color type strategy]
-    (do
-      (when-not (or (= type "HUMAN") (= type "COMPUTER"))
-        (throw (IllegalArgumentException. "Wrong type. Must be HUMAN or COMPUTER.")))
-      (when (and (= type "COMPUTER") (nil? strategy))
-        (throw (IllegalArgumentException. "Computers must have a strategy.")))
-      (when (and (= type "HUMAN") (not (nil? strategy)))
-        (throw (IllegalArgumentException. "Humans have their own strategies.")))
-      (let [base {:id id
-                  :color color
-                  :type type}]
-        (if (= type "COMPUTER")
-          (assoc base :strategy (atom strategy))
-          base)))))
+   (do
+     (when-not (or (= type "HUMAN") (= type "COMPUTER"))
+       (throw (IllegalArgumentException. "Wrong type. Must be HUMAN or COMPUTER.")))
+     (when (and (= type "COMPUTER") (nil? strategy))
+       (throw (IllegalArgumentException. "Computers must have a strategy.")))
+     (when (and (= type "HUMAN") (not (nil? strategy)))
+       (throw (IllegalArgumentException. "Humans have their own strategies.")))
+     (let [base {:id    id
+                 :color color
+                 :type  type}]
+       (if (= type "COMPUTER")
+         (assoc base :strategy (atom strategy))
+         base)))))
 
 
 (defn
@@ -91,9 +91,9 @@
   new-game!
   ([games board players] (new-game! games board players (uuid)))
   ([games board players id]
-    (let [game (create-game board players id)]
-      (swap! games add-new-game game)
-      (:id game))))
+   (let [game (create-game board players id)]
+     (swap! games add-new-game game)
+     (:id game))))
 
 
 (defn
@@ -119,22 +119,25 @@
 
 
 (defn
-  #^{:doc "Makes a move on the game with the given id."}
+  #^{:doc
+     "Makes a move on the game with the given id.
+     If strategy given, it must have the signature [state players]."}
   move!
   ([games id player x y]
-    (move! games id player (fn [& _] [x y])))
+   (move! games id player (fn [& _] [x y])))
   ([games id player strategy]
-    (when-not (contains-game? @games id) (throw (IllegalArgumentException. "There is no game with the given id.")))
-    (let [game (get @games id)
-          state (get-state game)
-          states (:states game)]
-      (when (not= (:player-in-turn state) player)
-        (throw (IllegalArgumentException. "The player is not in turn.")))
-      (swap! states #(conj %1
-                           (let [coordinate (strategy (:board (last %1)) player)
-                                 x (first coordinate)
-                                 y (second coordinate)]
-                             (core/move (last %1) (:players game) player x y)))))))
+   (when-not (contains-game? @games id) (throw (IllegalArgumentException. "There is no game with the given id.")))
+   (let [game (get @games id)
+         players (:players game)
+         state (get-state game)
+         states (:states game)]
+     (when (not= (:player-in-turn state) player)
+       (throw (IllegalArgumentException. "The player is not in turn.")))
+     (swap! states #(conj %1
+                          (let [coordinate (strategy (last %1) players)
+                                x (first coordinate)
+                                y (second coordinate)]
+                            (core/move (last %1) (:players game) player x y)))))))
 
 
 (defn undo!

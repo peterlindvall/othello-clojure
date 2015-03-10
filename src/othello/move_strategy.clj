@@ -12,13 +12,17 @@
                                                     ".WB."
                                                     ".BW."
                                                     "....")]
-               (is= (upper-left-strategy board "W") [0 2])
-               (is= (upper-left-strategy board "B") [0 1])))}
-  upper-left-strategy [board player]
-  (first
-    (filter
-      #(othello.core/valid-board-move? board player (first %1) (second %1))
-      (sort (keys board)))))
+               (is= (upper-left-strategy {:board board :player-in-turn "W"}) [0 2])
+               (is= (upper-left-strategy {:board board :player-in-turn "B"}) [0 1])))}
+  upper-left-strategy
+  ([state] (upper-left-strategy state nil))
+  ([state _]
+   (let [board (:board state)
+         player (:player-in-turn state)]
+     (first
+       (filter
+         #(othello.core/valid-board-move? board player (first %1) (second %1))
+         (sort (keys board)))))))
 
 
 ;;TODO: The score heuristic does not count the opponent score (which might make the player lose because the own score is maximized but the opponent score is still higher).
@@ -104,13 +108,13 @@
                    nil
                    (core/move state players (:player-in-turn state) (first coord) (second coord)))))]
     (do
-      (while (not (core/game-over? (last @states)))
-        (let [current-state (last @states)
-              new-state (move current-state 10)]
-          (reset! states (conj @states new-state))))
+      (time (while (not (core/game-over? (last @states)))
+              (let [current-state (last @states)
+                    new-state (move current-state 10)]
+                (reset! states (conj @states new-state)))))
       ; Uncomment this row to print the states.
       ;(print (apply str (map #(str (core/state->string %1)) @states)))
       (let [last-state (last @states)
             last-board (:board last-state)]
-        (is= (get-score last-board "W") 3)
-        (is= (get-score last-board "B") 7)))))
+        (is= (core/get-score last-board "W") 3)
+        (is= (core/get-score last-board "B") 7)))))

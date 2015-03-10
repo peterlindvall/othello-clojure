@@ -5,6 +5,7 @@
   (let [namespaces '(
                       "othello.board"
                       "othello.core"
+                      "othello.move-strategy"
                       "othello.mutator"
                       "othello.state"
                       "test.core"

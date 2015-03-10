@@ -47,7 +47,7 @@
      Appens a \n character."}
   return-print [& objects]
   (do
-    (print (apply str (conj objects "\n")))
+    (print (str (apply str objects) "\n"))
     (first objects)))
 
 ;; Mutable part of the namespace

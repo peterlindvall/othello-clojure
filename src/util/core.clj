@@ -3,10 +3,11 @@
   (:use [clojure.test :only (is)]
         [clojure.repl :only (doc)]
         [clojure.walk :only (postwalk)]
-        [test.core :only (is=)]))
+        [test.core :only (is=)]
+        [clojure.test :only (run-tests)]))
 
 (defn
-  #^{:doc "Works like clojure.core/deref except that if the given value is not something dereferable,
+  #^{:doc  "Works like clojure.core/deref except that if the given value is not something dereferable,
           the value will simply be returned. If the given value is a collection, it will be traversed and dereferenced.
           The option depth argument tells how deep the algorithm should go in the structure.
           Depth of 0 will return the exact object given as argument.
@@ -28,17 +29,26 @@
   ->value
   ([object] (->value object Double/POSITIVE_INFINITY))
   ([object depth]
-    (if (= depth 0)
-      object
-      (postwalk (fn [value]
-                  (if (instance? clojure.lang.IDeref value)
-                    (->value @value (dec depth))
-                    value))
-                object))))
+   (if (= depth 0)
+     object
+     (postwalk (fn [value]
+                 (if (instance? clojure.lang.IDeref value)
+                   (->value @value (dec depth))
+                   value))
+               object))))
 (defn
   #^{:doc "Generates a random UUID."}
   uuid []
   (str (java.util.UUID/randomUUID)))
+
+(defn
+  #^{:doc
+     "Works exactly like clojure.core/print but also returns the value of the first argument.
+     Appens a \n character."}
+  return-print [& objects]
+  (do
+    (print (apply str (conj objects "\n")))
+    (first objects)))
 
 ;; Mutable part of the namespace
 

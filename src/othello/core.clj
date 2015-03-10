@@ -222,7 +222,6 @@
   (> (count (get-valid-moves board player)) 0))
 
 
-
 (defn
   #^{:doc  "Returns the next player in turn. The current-player is the player that already made a move and the board is
             the board after the move."
@@ -261,6 +260,15 @@
     (let [board-after-move (move-on-board (:board state) player x y)]
       {:board          board-after-move
        :player-in-turn (next-player-in-turn board-after-move players player)})))
+
+(defn
+  #^{:doc  "Determines if the game is over or not. The game is over when no player can make a move."
+     :test (fn []
+             (is (game-over? {:board nil :player-in-turn nil}))
+             (is (not (game-over? {:board nil :player-in-turn "W"}))))}
+  game-over? [state]
+  (nil? (:player-in-turn state)))
+
 
 (defn
   #^{:doc  "Merges a history of items into a string."

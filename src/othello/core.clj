@@ -18,24 +18,24 @@
              (is (thrown? IllegalArgumentException (string->board '(".") nil))))}
   string->board
   ([players string-board]
-    (let [map-strategy (fn [value] (nth players (read-string value)))]
-      (string->board players string-board map-strategy)))
+   (let [map-strategy (fn [value] (nth players (read-string value)))]
+     (string->board players string-board map-strategy)))
   ([players string-board map-strategy]
-    (do
-      (when (> (count players) 10) (throw (IllegalArgumentException. "number of players cannot be more than 10")))
-      (when (some #(= "." %) players) (throw (IllegalArgumentException. "the dot character cannot be used as player id")))
-      (let
-        [indexed-elements (fn [seq] (map-indexed vector seq))]
-        ; ([0 ([0 \W] [1 \.] [2 \.] [3 \B])] [1 ([0 \W] [1 \W] [2 \.] [3 \.])] [2 ([0 \B] [1 \B] [2 \B] [3 \.])])
-        (into {} (for [row (indexed-elements (map indexed-elements string-board))
-                       :let [y (first row)]
-                       x-and-occupant (second row)
-                       :let [x (first x-and-occupant)
-                             occupant (str (second x-and-occupant))]]
-                   (condp = occupant
-                     " " ()
-                     "." [[x y] nil]
-                     [[x y] (map-strategy occupant)])))))))
+   (do
+     (when (> (count players) 10) (throw (IllegalArgumentException. "number of players cannot be more than 10")))
+     (when (some #(= "." %) players) (throw (IllegalArgumentException. "the dot character cannot be used as player id")))
+     (let
+       [indexed-elements (fn [seq] (map-indexed vector seq))]
+       ; ([0 ([0 \W] [1 \.] [2 \.] [3 \B])] [1 ([0 \W] [1 \W] [2 \.] [3 \.])] [2 ([0 \B] [1 \B] [2 \B] [3 \.])])
+       (into {} (for [row (indexed-elements (map indexed-elements string-board))
+                      :let [y (first row)]
+                      x-and-occupant (second row)
+                      :let [x (first x-and-occupant)
+                            occupant (str (second x-and-occupant))]]
+                  (condp = occupant
+                    " " ()
+                    "." [[x y] nil]
+                    [[x y] (map-strategy occupant)])))))))
 
 (defn
   #^{:doc  "A board is created from the string. The player ids must be of length one. The dot character cannot be used as player id."
@@ -204,15 +204,24 @@
       (catch Exception e false))))
 
 (defn
+  #^{:doc  "Returns a list of all valid moves for the given player. Returns an empty list of no valid moves exists."
+     :test (fn []
+             (let [board (simple-string->board "..BW")]
+               (is= (get-valid-moves board "W") '([1 0]))
+               (is= (get-valid-moves board "B") '())))}
+  get-valid-moves [board player]
+  (filter #(valid-board-move? board player (first %) (second %)) (keys board)))
+
+(defn
   #^{:doc  "Determines if the given player has a valid move on the given board."
      :test (fn []
              (let [board (simple-string->board "..BW")]
                (is (has-valid-move board "W"))
                (is (not (has-valid-move board "B")))))}
   has-valid-move [board player]
-  (not (nil? (some
-               #(valid-board-move? board player (first %) (second %))
-               (keys board)))))
+  (> (count (get-valid-moves board player)) 0))
+
+
 
 (defn
   #^{:doc  "Returns the next player in turn. The current-player is the player that already made a move and the board is
@@ -272,8 +281,8 @@
   #^{:doc  "Returns a string representation of the state."
      :test (fn []
              (is= (state->string
-                    {:board (simple-string->board ".WBO."
-                                                  "OBWWW")
+                    {:board          (simple-string->board ".WBO."
+                                                           "OBWWW")
                      :player-in-turn "O"})
                   (str ".WBO.\n"
                        "OBWWW\n"

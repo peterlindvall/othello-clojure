@@ -64,7 +64,7 @@
                                      (apply taker (conj
                                                     (map
                                                       #(minimax (core/move state players player-in-turn (first %1) (second %1)) (inc depth))
-                                                      (seq (core/get-valid-moves board player-in-turn)))
+                                                      (core/get-valid-moves board player-in-turn))
                                                     default-value)))]
                      (if (or (= depth stop-depth) (core/game-over? state))
                        ; Reached depth limit or in terminal node.
@@ -84,7 +84,7 @@
        (let [score-moves (map
                            #(do {:score (minimax (core/move state players player (first %1) (second %1)) 1)
                                  :move  %1})
-                           (seq (core/get-valid-moves (:board state) player)))
+                           (core/get-valid-moves (:board state) player))
              max-score (apply max (map #(:score %1) score-moves))]
          (first (filter #(= max-score (:score %1)) score-moves)))))))
 

@@ -295,6 +295,7 @@
   history->string [history item->string]
   (clojure.string/join "\n" (for [item history] (item->string item))))
 
+
 (defn
   #^{:doc  "Returns a string representation of the state."
      :test (fn []

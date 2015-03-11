@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/tomas81508/othello-clojure.svg?branch=master)](https://travis-ci.org/tomas81508/othello-clojure)
+
 # othello-clojure
 Laborations on othello in Clojure.
 

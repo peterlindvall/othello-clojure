@@ -45,8 +45,8 @@
                                                         "....WWW.")
                    state {:board board :player-in-turn "W"}
                    state-end {:board board-end :player-in-turn nil}]
-               (comment (is= (:move (minimax-move-strategy state '("W" "B") 10)) [4 2]))
-               (is= (:move (minimax-move-strategy state-end '("W" "B") 10)) nil)))}
+               (comment (is= (minimax-move-strategy state '("W" "B") 10) [4 2]))
+               (is= (minimax-move-strategy state-end '("W" "B") 10) nil)))}
   minimax-move-strategy
   ([state players] (minimax-move-strategy state players Double/POSITIVE_INFINITY))
   ([state players depth]
@@ -90,7 +90,7 @@
                                  :move  %1})
                            (core/get-valid-moves (:board state) player))
              max-score (apply max (map #(:score %1) score-moves))]
-         (first (filter #(= max-score (:score %1)) score-moves)))))))
+         (:move (first (filter #(= max-score (:score %1)) score-moves))))))))
 
 ;;------------------------------------
 ;; Integration tests of this namespace
@@ -103,7 +103,7 @@
         players '("W" "B")
         states (atom [{:board initial-board :player-in-turn "W"}])
         move (fn [state depth]
-               (let [coord (:move (minimax-move-strategy state players depth))]
+               (let [coord (minimax-move-strategy state players depth)]
                  (if (nil? coord)
                    nil
                    (core/move state players (:player-in-turn state) (first coord) (second coord)))))]

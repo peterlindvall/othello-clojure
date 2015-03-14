@@ -1,8 +1,9 @@
 (ns othello.move-strategy
   "Move strategies for anyone who needs them."
-  (:require [othello.core :as core])
+  (:require [othello.core :as core]
+            [othello.board :as board])
   (:use [test.core :only (is=)]
-        [clojure.test :only (deftest)]
+        [clojure.test :only (deftest testing)]
         util.core))
 
 (defn
@@ -85,7 +86,7 @@
        ; Since the maximizing algorithm only returns the best possible score value, we need to keep track of the first moves ourselves.
        ; By calling the maximizing algorithm on all possible moves that the player has for the beginning state,
        ; and then picking the move that resulted in the highest score we have picked the best move possible.
-       (let [score-moves (map
+       (let [score-moves (pmap
                            #(do {:score (minimax (core/move state players player (first %1) (second %1)) 1)
                                  :move  %1})
                            (core/get-valid-moves (:board state) player))
@@ -97,24 +98,33 @@
 ;;------------------------------------
 
 (deftest minimax-move-strategy-test
-  (let [initial-board (core/simple-string->board "..BBWB.."
-                                                 "....B..."
-                                                 "........")
-        players '("W" "B")
-        states (atom [{:board initial-board :player-in-turn "W"}])
-        move (fn [state depth]
-               (let [coord (minimax-move-strategy state players depth)]
-                 (if (nil? coord)
-                   nil
-                   (core/move state players (:player-in-turn state) (first coord) (second coord)))))]
-    (do
-      (time (while (not (core/game-over? (last @states)))
-              (let [current-state (last @states)
-                    new-state (move current-state 10)]
-                (reset! states (conj @states new-state)))))
-      ; Uncomment this row to print the states.
-      ;(print (apply str (map #(str (core/state->string %1)) @states)))
-      (let [last-state (last @states)
-            last-board (:board last-state)]
-        (is= (core/get-score last-board "W") 3)
-        (is= (core/get-score last-board "B") 7)))))
+  (testing "Soundness"
+    (let [initial-board (core/simple-string->board "..BBWB.."
+                                                   "....B..."
+                                                   "........")
+          players '("W" "B")
+          states (atom [{:board initial-board :player-in-turn "W"}])
+          move (fn [state depth]
+                 (let [coord (minimax-move-strategy state players depth)]
+                   (if (nil? coord)
+                     nil
+                     (core/move state players (:player-in-turn state) (first coord) (second coord)))))]
+      (do
+        (time (while (not (core/game-over? (last @states)))
+                (let [current-state (last @states)
+                      new-state (move current-state 10)]
+                  (reset! states (conj @states new-state)))))
+        ; Uncomment this row to print the states.
+        ;(print (apply str (map #(str (core/state->string %1)) @states)))
+        (let [last-state (last @states)
+              last-board (:board last-state)]
+          (is= (core/get-score last-board "W") 3)
+          (is= (core/get-score last-board "B") 7)))))
+  (testing "Performance"
+           (let [players ["W" "B"]
+                 initial-board (core/simple-string->board "...."
+                                                          ".WB."
+                                                          ".BW."
+                                                          "....")
+                 state {:board initial-board :player-in-turn "W"}]
+             (time (minimax-move-strategy state players 6)))))

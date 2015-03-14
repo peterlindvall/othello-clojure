@@ -67,10 +67,14 @@
                          player-in-turn (:player-in-turn state)
                          ; Evaluates all valid moves for the player in turn and returns the move defined by the taker function argument (min/max in this algorithm).
                          take-move (fn [taker]
-                                     (apply taker
-                                            (map
-                                              #(minimax (core/move state players player-in-turn (first %1) (second %1)) (inc depth))
-                                              (core/get-valid-moves board player-in-turn))))]
+                                     (let [free-nodes (count (filter #(nil? (second %1)) board))
+                                           map-fn (resolve (if (> free-nodes 6)
+                                                             'pmap
+                                                             'map))]
+                                       (apply taker
+                                              (map-fn
+                                                #(minimax (core/move state players player-in-turn (first %1) (second %1)) (inc depth))
+                                                (core/get-valid-moves board player-in-turn)))))]
                      (if (or (= depth stop-depth) (core/game-over? state))
                        ; Reached depth limit or in terminal node.
                        ; Evaluate the board with the score heuristic.
@@ -121,10 +125,10 @@
           (is= (core/get-score last-board "W") 3)
           (is= (core/get-score last-board "B") 7)))))
   (testing "Performance"
-           (let [players ["W" "B"]
-                 initial-board (core/simple-string->board "...."
-                                                          ".WB."
-                                                          ".BW."
-                                                          "....")
-                 state {:board initial-board :player-in-turn "W"}]
-             (time (minimax-move-strategy state players 6)))))
+    (let [players ["W" "B"]
+          initial-board (core/simple-string->board "...."
+                                                   ".WB."
+                                                   ".BW."
+                                                   "....")
+          state {:board initial-board :player-in-turn "W"}]
+      (time (minimax-move-strategy state players 8)))))

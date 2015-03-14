@@ -29,7 +29,6 @@
 ;;TODO: The score heuristic does not count the opponent score (which might make the player lose because the own score is maximized but the opponent score is still higher).
 ;;TODO: How does it handle multiple players?
 ;;TODO: Speedup with the alpha-beta pruning?
-;;TODO: Do the subtrees in parallel?
 (defn
   #^{:doc
            "Minimax algorithm as described here: http://en.wikipedia.org/wiki/Minimax.

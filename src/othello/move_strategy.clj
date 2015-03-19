@@ -130,4 +130,4 @@
                                                    ".BW."
                                                    "....")
           state {:board initial-board :player-in-turn "W"}]
-      (time (minimax-move-strategy state players 8)))))
+      (time (minimax-move-strategy state players 5)))))
